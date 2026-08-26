@@ -22,12 +22,12 @@ Open a todolist with one entry per phase before launching anything.
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
 3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
-4. Pick the worker model from `swarm workers` in `~/.cursor/rules/pstack-models.mdc` when present. Otherwise use `grok-4.6-fast-xhigh`. For a model race, name each arm's model up front.
+4. Pick the worker model from `swarm workers` in `~/.pstack/models.md` when present. Otherwise use the active harness file's `swarm workers` default. For a model race, name each arm's model up front, and skip the race entirely on a harness with no per-subagent model override.
 5. Give each worker its own writable output when it writes. Use a worktree, branch, or `/tmp/swarm-<slug>/worker-<n>/`.
 
 ## Phase B: Fan out
 
-Spawn all N workers in one message with `subagent_type: generalPurpose`, `environment: "cloud"`, `run_in_background: true`, and the configured model. Use `environment: "local"` only when the worker needs access to something on the user's computer.
+Spawn all N workers in one message, backgrounded, with the configured model, using the subagent tool the active harness file names. Cursor takes `environment: "cloud"` for workers that need no local access; every other harness runs workers locally, so give each one its own worktree or output directory instead (Phase A step 5) and treat the harness file's "long-running work" section as the ceiling on how detached a worker can be.
 
 When a worker must start from a non-default pushed branch, pass `cloud_base_branch`.
 

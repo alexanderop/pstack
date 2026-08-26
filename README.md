@@ -12,7 +12,36 @@ there's a growing sense that ai writes too much slop code. i agree. i don't want
 
 fork it. improve it. make it yours. PRs are welcome! 
 
+> **This is a multi-harness port of [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+> by [poteto](https://x.com/poteto).** Upstream targets Cursor. This fork keeps
+> the skills byte-identical wherever it can and pulls the Cursor-specific facts
+> — subagent tool, model slugs, transcript paths, project-skill paths — into
+> `harness/`, one file per harness. See [PORT.md](./PORT.md) for exactly what
+> changed and what does not survive the trip.
+
 ## install
+
+**Claude Code**
+
+```bash
+/plugin marketplace add alexanderop/pstack
+/plugin install pstack@pstack
+```
+
+**Codex**
+
+```bash
+codex plugin marketplace add https://github.com/alexanderop/pstack
+codex plugin install pstack
+```
+
+**GitHub Copilot CLI** — reads the Claude manifest as-is:
+
+```bash
+copilot plugin install alexanderop/pstack
+```
+
+**Cursor** — upstream is the better source, but this fork installs too:
 
 ```bash
 /add-plugin pstack
@@ -22,12 +51,12 @@ fork it. improve it. make it yours. PRs are welcome!
 
 two steps:
 
-1. run [`/setup-pstack`](./skills/setup-pstack/SKILL.md) and choose which models you want.
+1. run [`/setup-pstack`](./skills/setup-pstack/SKILL.md). it detects your harness, then the models you have access to, and writes `~/.pstack/models.md`.
 2. use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) whenever you're doing anything that requires rigor.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs.
 
-that's it. the other skills are situational; the mode skill uses them for you as needed. out of the box the mode splits work by model strength: precisely-specified code goes to sol, fast mechanical code goes to grok, and prose and judgment go to fable. the default panel is fable / sol / grok / opus 5. [`/setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
+that's it. the other skills are situational; the mode skill uses them for you as needed. out of the box the mode splits work by model strength: precisely-specified code to the strongest instruction-follower, fast mechanical code to the fast model, prose and judgment to the strongest judgment model. which slugs those are depends on the harness — see `harness/<yours>.md`. on cursor the default panel is fable / sol / grok / opus 5; on claude code it is fable / opus / sonnet / haiku, four capability tiers rather than four vendors. [`/setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
 
 ## usage
 

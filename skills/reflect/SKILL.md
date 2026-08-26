@@ -22,11 +22,22 @@ Skip when the conversation is trivial, off-topic, or already covered by an exist
 
 ### 1. Locate the active transcript
 
-The parent finds its own transcript file before fanning out. The system prompt names the active workspace's `agent-transcripts/` directory; use that path. Do not glob across `~/.cursor/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
+The parent finds its own transcript file before fanning out. Read the
+"Transcripts" section of `harness/<detected>.md` for where they live and in what
+form — it differs on all four harnesses, and on Codex and Copilot CLI there is no
+per-workspace directory to list. Scope to the active workspace only; globbing
+across all workspaces reads private chats from unrelated projects.
+
+Where the harness does give you a per-workspace directory (Cursor, Claude Code),
+newest-first by real modification time:
 
 ```bash
-ls -t <agent-transcripts>/*.jsonl <agent-transcripts>/*/*.jsonl <agent-transcripts>/*/subagents/*.jsonl 2>/dev/null | head -10
+ls -t <transcripts>/*.jsonl <transcripts>/*/*.jsonl <transcripts>/*/subagents/*.jsonl 2>/dev/null | head -10
 ```
+
+On Codex, bound by date under `~/.codex/sessions/<YYYY>/<MM>/<DD>/` and match cwd.
+On Copilot CLI, query `~/.copilot/session-store.db` by `cwd` for the session ids,
+then read each `~/.copilot/session-state/<id>/events.jsonl`.
 
 Three transcript layouts: legacy flat (`<id>.jsonl`), current nested (`<id>/<id>.jsonl`), and subagent (`<parent>/subagents/<child>.jsonl`).
 
@@ -34,19 +45,19 @@ For each candidate, read the first JSONL line and check that `message.content[0]
 
 ### 2. Spawn three reviewers in parallel
 
-One message, three `Task` calls, `subagent_type: generalPurpose`, explicit `model:` on each, agent mode (`readonly: false`). Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript); readonly strips MCPs. The prompt forbids file writes; the parent applies edits.
+One message, three subagent calls, the harness's general-purpose agent type, explicit `model:` on each, agent mode (`readonly: false`). Reviewers need MCP access for context lookups (tickets, chat threads, observability traces referenced in the transcript); readonly strips MCPs. The prompt forbids file writes; the parent applies edits.
 
 | Lens | `model` | Prompt template |
 |---|---|---|
-| Judgment | your configured reflect-judgment model (default `claude-fable-5-thinking-max`) | `references/judgment-reviewer.md` |
-| Tooling | your configured reflect-tooling model (default `gpt-5.6-sol-max`) | `references/tooling-reviewer.md` |
-| Divergent | your configured reflect-judgment model (default `claude-fable-5-thinking-max`) | `references/divergent-reviewer.md` |
+| Judgment | your configured reflect-judgment model (harness default) | `references/judgment-reviewer.md` |
+| Tooling | your configured reflect-tooling model (harness default) | `references/tooling-reviewer.md` |
+| Divergent | your configured reflect-judgment model (harness default) | `references/divergent-reviewer.md` |
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Task` response body.
 
 ### 3. Synthesize
 
-One `Task` call, `subagent_type: generalPurpose`, using your configured reflect-judgment model (default `claude-fable-5-thinking-max`), agent mode (`readonly: false`). The synthesizer's quality check includes spot-verifying citations, which can require MCP access; readonly strips MCPs. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+One subagent call, the harness's general-purpose agent type, using your configured reflect-judgment model (harness default), agent mode (`readonly: false`). The synthesizer's quality check includes spot-verifying citations, which can require MCP access; readonly strips MCPs. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
 
 ### 4. Structural enforcement check
 
@@ -61,7 +72,7 @@ Backlog items file to whatever devex / backlog tracker your team uses automatica
 For each approved Accepted item, follow the Routing field exactly:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): parent does directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to Cursor's built-in `create-skill` skill and run its draft / test / iterate loop.
+- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to the harness's skill-authoring tool (`harness/built-ins.md`) and run its draft / test / iterate loop.
 - `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to `create-skill` and run its description-optimization loop.
 - `new skill via create-skill: <kebab-name>`: hand creation to `create-skill`. Do not invent the shape ad hoc.
 

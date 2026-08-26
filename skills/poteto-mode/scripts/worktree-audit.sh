@@ -22,9 +22,16 @@ prs=$(mktemp)
 gh pr list --author "@me" --state all --limit 1000 \
 	--json number,state,headRefName 2>/dev/null > "$prs" || echo "[]" > "$prs"
 
-# Transcripts dir: ~/.cursor/projects/<slugified-repo-path>/agent-transcripts.
-slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
-transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
+# Transcripts dir, per harness. Cursor slugifies the repo path with the leading
+# slash dropped; Claude Code keeps it. Codex and Copilot CLI have no
+# per-workspace directory, so LAST_CHAT is simply blank there.
+if [ -n "${CLAUDECODE:-}" ] || [ -n "${CLAUDE_CODE_ENTRYPOINT:-}" ]; then
+	slug=$(printf '%s' "$main_wt" | sed 's#/#-#g')
+	transcripts="$HOME/.claude/projects/$slug"
+else
+	slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
+	transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
+fi
 now=$(date +%s)
 
 printf "SIZE\tAGE\tMERGED\tDIRTY\tREMOTE\tPR\tLAST_CHAT\tBUCKET\tWORKTREE\n"
