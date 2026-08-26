@@ -28,18 +28,22 @@ fork it. improve it. make it yours. PRs are welcome!
 /plugin install pstack@pstack
 ```
 
-**Codex**
+**Codex** — falls back to the Claude manifest:
 
 ```bash
 codex plugin marketplace add https://github.com/alexanderop/pstack
-codex plugin install pstack
+codex plugin add pstack@pstack
 ```
 
 **GitHub Copilot CLI** — reads the Claude manifest as-is:
 
 ```bash
-copilot plugin install alexanderop/pstack
+copilot plugin marketplace add alexanderop/pstack
+copilot plugin install pstack@pstack
 ```
+
+(Copilot's direct-path install works too, but it warns that only
+`plugin@marketplace` will be supported in a future release.)
 
 **Cursor** — upstream is the better source, but this fork installs too:
 
