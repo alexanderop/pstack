@@ -86,6 +86,43 @@ Four things, stated plainly rather than papered over.
    but it works on Cursor only. Porting it means redoing its setup skill against
    each harness's project-config file, which is a separate job.
 
+## Verified, not assumed
+
+All three installs were run against this tree, and three of the port's decisions
+came out of what they reported rather than out of the docs.
+
+- **`"agents"` in `.claude-plugin/plugin.json` is omitted on purpose.** As a
+  string it fails validation outright (`agents: Invalid input`). As an array of
+  paths it validates and installs — and then registers **zero** agents, because
+  declaring it suppresses the auto-discovery that actually works. No key at all
+  is the only form that yields `Agents (2)`.
+- **Agent files stay `*.md`, not `*.agent.md`.** Copilot CLI's own convention is
+  the `.agent.md` suffix, and Claude Code does discover those files — but it
+  names an agent from its *filename*, so the suffix produces `poteto-agent.agent`
+  and silently breaks every `subagent_type: "poteto-agent"` call in
+  `poteto-mode`. Plain `.md` registers correctly on Claude Code, Codex, and
+  Cursor. The cost is that Copilot CLI registers the skills but not the two
+  agents; they are thin routing wrappers, so the loss is small and the alternative
+  breaks the main harness.
+- **Codex ingests `disable-model-invocation: true`; its authoring linter rejects
+  it.** `plugin-creator/scripts/validate_plugin.py` fails all 39 skills carrying
+  the key with "must be false". That is the lint, not the install gate:
+  `compound-engineering` ships the same key, fails the same check, and is
+  installed and enabled in Codex. `codex plugin add pstack@pstack` succeeds here
+  too. The real consequence is behavioral, not fatal — those 39 skills stay
+  model-invokable on Codex instead of being user-invoked only.
+
+Install results on this machine:
+
+| harness | command | result |
+|---|---|---|
+| Claude Code | `claude plugin install pstack@pstack` | 44 skills, 2 agents |
+| Codex | `codex plugin add pstack@pstack` | 44 skills, read `.claude-plugin/marketplace.json` |
+| Copilot CLI | `copilot plugin install <path>` | 44 skills, 0 agents |
+
+`scripts/validate.sh` re-checks the manifests, every skill and agent name, and
+that no Cursor-only path leaked back into `skills/`.
+
 ## Copilot CLI specifics
 
 Copilot installs the Claude manifest directly and discovers `skills/` and

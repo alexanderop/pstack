@@ -17,7 +17,5 @@
     "agent-style",
     "subagents",
     "unslop"
-  ],
-  "skills": "./skills/",
-  "agents": "./agents/"
+  ]
 }
