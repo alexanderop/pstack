@@ -1,0 +1,23 @@
+{
+  "name": "pstack-evals",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "vitest run --project unit --project contracts",
+    "test:unit": "vitest run --project unit",
+    "check": "tsc --noEmit",
+    "eval:codex": "PSTACK_LIVE_EVALS=1 vitest run --project live-codex",
+    "eval:baseline": "PSTACK_LIVE_EVALS=1 vitest run --project acceptance",
+    "eval:list": "PSTACK_LIVE_EVALS=1 vitest list"
+  },
+  "devDependencies": {
+    "@types/node": "24",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0",
+    "@pstack/agent-eval": "workspace:*"
+  }
+}

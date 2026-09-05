@@ -1,0 +1,17 @@
+{
+  "name": "@pstack/agent-eval",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/codex.ts",
+    "./vitest": "./src/vitest.ts",
+    "./evidence": "./src/evidence.ts"
+  },
+  "peerDependencies": {
+    "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.5.4"
+  }
+}
