@@ -46,3 +46,35 @@ The subsequent Vitest 5 refactor passed TypeScript and 30 unit/installation chec
 The final real Codex run passed native-child execution and comment review. Worktree protection remained red with `safe` instead of `verify-recent-chat`. See the [local final report](../.eval-artifacts/readable-evals-final.json). An earlier refactor trial recorded the correct comment edit as passing and the unrecognized wrapper read as `unknown`, preserving the distinction between outcome success and insufficient transcript evidence.
 
 Tasks now live under `evals/tasks/`; named graders save separate checks in `trial.json`. Repeated trials are explicitly registered with `PSTACK_EVAL_TRIALS`; failure retries remain disabled. Production plugin files are unchanged.
+
+## Records-desk pilot
+
+The first realistic pilot used the same Codex CLI and model settings above. All three resulting applications passed their behavioral checks. The initial suite reported all three trials as `unknown` because its mode-activation grader required a file read. Native rollouts show that Codex injected the complete poteto-mode skill directly into each root conversation.
+
+The adapter now records native injected skills separately from file reads. Regrading copies of the saved workspaces with the corrected activation grader passed all three tasks. Original verdicts remain unchanged. These regrades are reassessments of the same attempts, not new trials or evidence of repeatability.
+
+| Task | Initial trial duration, including setup and collection | Regrade |
+| --- | --- | --- |
+| Stale search | 201 seconds | [Passed](../.eval-artifacts/records-regrade-5yJ8ZC/regrade.json) |
+| CSV export | 156 seconds | [Passed](../.eval-artifacts/records-regrade-WiIYEn/regrade.json) |
+| Help text | 46 seconds | [Passed](../.eval-artifacts/records-regrade-fIfk4D/regrade.json) |
+
+The help task makes overhead visible even when the edit is correct. This pilot has no plain-Codex comparison, so it does not establish a benefit from poteto-mode.
+
+A fresh help-text trial passed end to end with the corrected adapter and CLI-output check. [Live verdict](../.eval-artifacts/2026-09-05T11-34-30.664Z-35d6acad-cfc1-4cf3-b58c-d6f198e18212/verdict.json). TypeScript and all 38 unit and installation checks passed.
+
+## Routing comparison pilot
+
+One independent attempt per condition and task passed, nine of nine overall. The control is pinned to `18f794ce65a21e0f6bca2845a831993ece6fe8a7`; revised mode uses the current local routing edits. Each condition used one consistent candidate hash across its tasks.
+
+| Task | Plain Codex | Control mode | Revised mode |
+| --- | --- | --- | --- |
+| stale-search | 82.5 s | 166.2 s | 164.5 s |
+| csv-export | 77.7 s | 132.9 s | 144.8 s |
+| help-text | 28.2 s | 43.2 s | 34.3 s |
+
+Time wraps the adapter run, including skill discovery and transcript collection. These single observations do not establish a stable speed difference. Plain Codex was faster on both engineering tasks with the same behavioral acceptance criteria. Revised mode did not show an engineering-task speed benefit.
+
+The revised help trial read no supporting skill files, spawned no children, and verified the actual CLI output. Inspection of its complete command list confirmed the short route. Neither plugin condition read the PR playbook in this comparison; earlier pilot trials did, so this run alone does not establish the effect of the PR-routing change.
+
+[Full comparison report](../.eval-artifacts/routing-comparison-20260905T120012Z.json) retains per-trial correctness, workflow observations, hashes, and artifact paths. TypeScript, all 42 unit and installation checks, and plugin validation passed.

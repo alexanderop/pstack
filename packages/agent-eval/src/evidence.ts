@@ -43,3 +43,23 @@ export const sessionMetadata = z.object({
 export function parentId(meta: z.infer<typeof sessionMetadata>): string | null {
   return typeof meta.source === 'string' ? null : meta.source.subagent.thread_spawn.parent_thread_id
 }
+
+const injectedMessage = z.object({
+  type: z.literal('response_item'),
+  payload: z.object({
+    type: z.literal('message'), role: z.literal('user'),
+    content: z.array(z.object({ type: z.literal('input_text'), text: z.string() })),
+  }),
+})
+
+export function injectedSkills(rows: readonly unknown[]) {
+  return rows.flatMap(row => {
+    const parsed = injectedMessage.safeParse(row)
+    if (!parsed.success) return []
+    return parsed.data.payload.content.flatMap(item => {
+      const match = /^<skill>\s*<name>([^<]+)<\/name>\s*<path>([^<]+)<\/path>\s*([\s\S]+)<\/skill>\s*$/.exec(item.text)
+      const [, name, path, content] = match ?? []
+      return name && path && content?.trim() ? [{ name, path, content }] : []
+    })
+  })
+}

@@ -92,3 +92,18 @@ test('empty graders cannot pass vacuously', async () => {
   })
   await withSession(async session => expect((await task.execute(session)).status).toBe('error'))
 })
+
+test('records runtime observations separately from grader success', async () => {
+  const task = defineTask({ id: 'metrics', description: 'Measure a trial', files: {}, prompt: 'work',
+    observe: async () => null, graders: { Outcome: () => [equal('Deliberate failure', false, true)] } })
+  const transcript: Transcript = { status: 'completed', rootId: 'root', threads: [
+    { id: 'root', parentId: null, completed: true, reads: [], commands: [{ command: 'cat /plugin/playbooks/opening-a-pr.md', exitCode: 0, output: 'instructions' }] },
+    { id: 'child', parentId: 'root', completed: true, reads: [{ path: '/plugin/SKILL.md', output: 'instructions' }], commands: [{ command: 'node broken.mjs', exitCode: 1, output: 'failed' }] },
+  ] }
+  await withSession(async session => {
+    expect((await task.execute(session)).status).toBe('fail')
+    const metrics = JSON.parse(await readFile(join(session.artifacts.path, 'metrics.json'), 'utf8'))
+    expect(metrics).toMatchObject({ childCount: 1, commandCount: 2, failedCommandCount: 1, instructionReadCount: 1, prPlaybookReadCount: 1 })
+    expect(metrics.elapsedMs).toBeGreaterThanOrEqual(0)
+  }, transcript)
+})

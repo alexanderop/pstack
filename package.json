@@ -12,7 +12,10 @@
     "check": "tsc --noEmit",
     "eval:codex": "PSTACK_LIVE_EVALS=1 vitest run --project live-codex",
     "eval:baseline": "PSTACK_LIVE_EVALS=1 vitest run --project acceptance",
-    "eval:list": "PSTACK_LIVE_EVALS=1 vitest list --no-static-parse --project contracts --project live-codex --project acceptance"
+    "eval:list": "PSTACK_LIVE_EVALS=1 vitest list --no-static-parse --project contracts --project live-codex --project acceptance --project realistic --project comparison",
+    "eval:realistic": "PSTACK_LIVE_EVALS=1 vitest run --project realistic",
+    "eval:compare": "PSTACK_LIVE_EVALS=1 vitest run --project comparison",
+    "eval:report": "node evals/scripts/report.mjs"
   },
   "devDependencies": {
     "@types/node": "24",

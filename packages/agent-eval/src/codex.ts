@@ -4,14 +4,14 @@ import { createHash } from 'node:crypto'
 import { delimiter, dirname, isAbsolute, join } from 'node:path'
 import { z } from 'zod'
 import { createArtifacts } from './artifacts.js'
-import { parentId, readEvidence, sessionMetadata } from './evidence.js'
+import { injectedSkills, parentId, readEvidence, sessionMetadata } from './evidence.js'
 import { execute, type ProcessResult } from './process.js'
 import { openRpc } from './rpc.js'
 import { createWorkspace, fileHashes, inside } from './workspace.js'
 import type { AgentHarness } from './types.js'
 
 
-type ThreadEvidence = ReturnType<typeof readEvidence> & { parentId: string | null }
+type ThreadEvidence = ReturnType<typeof readEvidence> & { parentId: string | null; injectedSkills: ReturnType<typeof injectedSkills> }
 export type RunResult =
   | { status: 'completed'; rootId: string; threads: ThreadEvidence[]; changedPaths: string[]; execution: ProcessResult }
   | { status: 'cancelled' | 'timed-out' | 'infrastructure-failure'; reason: string; rootId: string | null; threads: ThreadEvidence[]; changedPaths: string[]; execution: ProcessResult | null }
@@ -29,6 +29,7 @@ export async function createCodexTrial(options: {
   artifactRoot: string
   candidate: { root: string; entries: readonly string[]; name: string; marketplace: string }
   files: Readonly<Record<string, string>>
+  plugin?: 'installed' | 'none'
   executable?: string
   model?: string
   reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra'
@@ -48,8 +49,8 @@ export async function createCodexTrial(options: {
   try {
     await mkdir(codexHome)
     const fixtureHashes = await workspace.seed(options.files, signal)
-    const candidateHashes = await workspace.snapshot(options.candidate.root, options.candidate.entries)
-    await artifacts.write('inputs.json', { fixtureHashes, candidateHashes, isolation: 'filesystem-convenience-only' })
+    const candidateHashes = options.plugin === 'none' ? {} : await workspace.snapshot(options.candidate.root, options.candidate.entries)
+    await artifacts.write('inputs.json', { fixtureHashes, candidateHashes, plugin: options.plugin ?? 'installed', isolation: 'filesystem-convenience-only' })
     await cp(workspace.candidate, join(artifacts.path, 'candidate'), { recursive: true, errorOnExist: true, force: false })
     const command = async (executable: string, args: readonly string[]) => {
       const result = await execute({ command: executable, args, ...processOptions, timeoutMs: 45_000 })
@@ -57,17 +58,21 @@ export async function createCodexTrial(options: {
       if (result.status !== 'exited' || result.exitCode !== 0) throw new Error(`${executable} ${args[0]} failed: ${result.stderr || result.stdout}`)
       return result
     }
-    async function install() {
-      if (installed) return installed
+    async function verifyVersion() {
       const version = await command(executable, ['--version'])
       if (version.stdout.trim() !== 'codex-cli 0.153.4') throw new Error(`Unsupported Codex protocol version: ${version.stdout.trim()}; validate the adapter before changing the pin. For HOME-dependent shims, set PSTACK_CODEX_BIN to the direct executable`)
+    }
+    async function install() {
+      if (options.plugin === 'none') throw new Error('Plugin installation is disabled for plain Codex')
+      if (installed) return installed
+      await verifyVersion()
       await command(executable, ['plugin', 'marketplace', 'add', workspace.candidate, '--json'])
       const result = await command(executable, ['plugin', 'add', `${options.candidate.name}@${options.candidate.marketplace}`, '--json'])
       installed = installSchema.parse(json(result.stdout))
       return installed
     }
     async function discover() {
-      const plugin = await install()
+      const plugin = options.plugin === 'none' ? (await verifyVersion(), null) : await install()
       const rpc = await openRpc({ ...processOptions, executable })
       try {
         const raw = await rpc.call('skills/list', { cwds: [workspace.project], forceReload: true })
@@ -75,9 +80,9 @@ export async function createCodexTrial(options: {
         const data = skillsSchema.parse(raw).data
         if (data.some(row => row.errors.length > 0)) throw new Error('Skill discovery returned errors')
         const skills = data.flatMap(row => row.skills)
-        const unexpected = skills.filter(skill => skill.pluginId !== plugin.pluginId && skill.scope !== 'system')
+        const unexpected = skills.filter(skill => skill.scope !== 'system' && (plugin === null || skill.pluginId !== plugin.pluginId))
         if (unexpected.length) throw new Error(`Foreign skill contamination: ${unexpected.map(skill => skill.name).join(', ')}`)
-        return skills.filter(skill => skill.pluginId === plugin.pluginId)
+        return plugin ? skills.filter(skill => skill.pluginId === plugin.pluginId) : []
       } finally { await rpc.dispose() }
     }
     async function collect(rootId: string) {
@@ -107,7 +112,7 @@ export async function createCodexTrial(options: {
           await artifacts.write(`thread-${session.meta.id}.json`, raw)
           const evidence = readEvidence(response.thread)
           await artifacts.write(`rollout-${session.meta.id}.json`, session.rows)
-          threads.push({ ...evidence, parentId: session.parentId })
+          threads.push({ ...evidence, parentId: session.parentId, injectedSkills: injectedSkills(session.rows) })
         }
         return threads
       } finally { await rpc.dispose() }
@@ -163,10 +168,10 @@ export async function createCodexTrial(options: {
 
 export type CodexTrial = Awaited<ReturnType<typeof createCodexTrial>>
 
-export function codexHarness(settings: Pick<Parameters<typeof createCodexTrial>[0], 'executable' | 'model' | 'reasoningEffort'> = {}): AgentHarness {
+export function codexHarness(settings: Pick<Parameters<typeof createCodexTrial>[0], 'executable' | 'model' | 'reasoningEffort' | 'plugin'> = {}): AgentHarness {
   return {
     id: 'codex',
-    label: 'Codex',
+    label: settings.plugin === 'none' ? 'Plain Codex' : 'Codex',
     async createSession(options) {
       const trial = await createCodexTrial({ ...options, ...settings })
       return {
@@ -178,12 +183,12 @@ export function codexHarness(settings: Pick<Parameters<typeof createCodexTrial>[
           command: trial.command,
         },
         artifacts: trial.artifacts,
-        skill: (name, instruction) => `Use $${options.candidate.name}:${name} to ${instruction}`,
+        skill: (name, instruction) => settings.plugin === 'none' ? instruction : `Use $${options.candidate.name}:${name} to ${instruction}`,
         async pluginFile(path) { return inside((await trial.install()).installedPath, path) },
         async run(prompt, settings) {
           const result = await trial.run(prompt, settings)
           const threads = result.threads.map(thread => ({
-            id: thread.id, parentId: thread.parentId, completed: thread.completed,
+            id: thread.id, parentId: thread.parentId, completed: thread.completed, injectedSkills: thread.injectedSkills,
             reads: thread.reads.map(read => ({ path: read.path, output: read.output })),
             commands: thread.commands.map(command => ({
               command: command.command, exitCode: command.exitCode, output: command.aggregatedOutput,

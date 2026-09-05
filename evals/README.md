@@ -50,3 +50,50 @@ PSTACK_EVAL_TRIALS=3 pnpm eval:baseline -t 'comment-review'
 This registers three independent trials. Every result is preserved; these are not failure retries. Missing recognized read evidence is `unknown`, which remains non-passing and requires transcript inspection. Grader exceptions are reported as errors rather than agent failures. The real-install probe exposed a valid combined-shell read that the parser could not classify, so a missing read must not automatically be called a missing instruction.
 
 `eval:list` uses Vitest 5's `--no-static-parse` to collect generated suite registrations without executing their test bodies. It selects only eval projects. The full suite and grader terminology is documented in the [package README](../packages/agent-eval/README.md#terminology).
+
+## Realistic poteto-mode tasks
+
+`pnpm eval:realistic` runs three tasks against the installed `poteto-mode` entrypoint in a fresh records-desk application for each trial:
+
+| Task | Independent acceptance checks |
+| --- | --- |
+| `stale-search` | Complete requests in both orders; reject obsolete rows and errors after success or failure; check repeated queries, separate controllers, retained rows, loading, and recovery. |
+| `csv-export` | Invoke the actual CLI; check status filtering, all records, empty results, quotes, commas, newlines, Unicode, and existing list behavior. |
+| `help-text` | Check actual CLI help output, correct the help source exactly, and reject unrelated file changes. |
+
+Run a pilot with three independent trials per task:
+
+```sh
+PSTACK_EVAL_TRIALS=3 pnpm eval:realistic
+```
+
+Use `-t 'stale-search'`, `-t 'csv-export'`, or `-t 'help-text'` to select one task. The existing direct-executable and model overrides also apply. Ordinary `pnpm test` does not run these model calls. Engineering tasks allow ten minutes of agent execution; the help task allows three minutes. Vitest allows eleven minutes per trial for setup and collection. No failure retries run.
+
+The fixture lives in `fixtures/records/`. It uses Node without downloaded application dependencies. The prompts state user goals and invoke poteto-mode without spelling out its internal workflow. A separate grader checks native skill injection or a recognized root read of the installed mode. Missing evidence remains `unknown`; inspect the native transcript before diagnosing an instruction-loading failure. Codex can inject a skill body directly, so a file read is not required when that injection is recorded.
+
+The acceptance check programs live in `checks/`, outside the seeded agent workspace, and run after the agent finishes. They exercise the resulting application rather than trusting agent-authored tests or final claims. This is filesystem separation, not a security boundary against hostile code. `records.unit.test.ts` verifies that the original application fails, complete reference solutions pass, and incomplete solutions fail. These deterministic checks establish grader behavior, not agent capability.
+
+The realistic suite measures the current poteto-mode candidate. Use the comparison suite below to compare routing variants and plain Codex. Neither suite estimates token cost, judges delegation quality, or establishes multi-turn persistence. A passing trial alone does not establish that poteto-mode improves on plain Codex.
+
+
+## Compare routing and overhead
+
+```sh
+pnpm eval:compare
+PSTACK_EVAL_TRIALS=3 pnpm eval:compare
+pnpm eval:report
+```
+
+The comparison runs the same task definitions and behavioral graders in three conditions:
+
+- `plain`: fresh Codex state, no candidate files exposed, no plugin installed, and the task instruction without a skill invocation. Discovery rejects foreign non-system skills.
+- `control`: the plugin from the exact Git revision in `comparison/control.json`, before the routing changes. Each trial extracts that revision into temporary storage and records its hashes and revision.
+- `revised`: the plugin in the current checkout, snapshotted before installation.
+
+The model, reasoning effort, task files, permissions, and timeouts stay the same. The plugin conditions explicitly invoke poteto-mode. Mode activation is checked separately from application behavior. Conditions rotate across tasks and repetitions to reduce order bias. The default is one attempt per condition and task, nine model calls total. Use `-t help-text` for a three-call routing check. Independent repetitions are not failure retries.
+
+`metrics.json` records elapsed milliseconds around `session.run`, including discovery and transcript collection but excluding initial fixture creation. It also records completed transcript child counts, shell-command counts, failed or incomplete commands, recognized skill-file reads, and successful shell commands containing the opening-a-PR playbook path. These are observations, not quality scores. File-read counts depend on parser coverage; command counts exclude non-shell tools. No token or monetary cost is inferred.
+
+`eval:report` reads saved comparison artifacts and emits JSON with every recorded attempt, overall and behavioral pass counts, and median elapsed time. It keeps different models, reasoning efforts, fixture hashes, and candidate hashes in separate groups. A run that fails before producing `trial.json` is not included; inspect Vitest's result for setup failures and interrupted runs. Raw artifacts remain unchanged. Pass the artifact root as an argument to report on another directory.
+
+The revised mode routes mechanical edits directly through locate, edit, and output verification. PR steps run only when requested or required by the established delivery workflow. The comparison measures those changes; delegation rules for engineering work remain unchanged.

@@ -1,0 +1,1 @@
+{"name":"records-desk","private":true,"type":"module","scripts":{"start":"node src/cli.mjs","test":"node --test"}}

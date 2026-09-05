@@ -11,6 +11,7 @@ export type TranscriptThread = Readonly<{
   id: string
   parentId: string | null
   completed: boolean
+  injectedSkills?: readonly Readonly<{ name: string; path: string; content: string }>[]
   reads: readonly Readonly<{ path: string; output: string }>[]
   commands: readonly Readonly<{
     command: string

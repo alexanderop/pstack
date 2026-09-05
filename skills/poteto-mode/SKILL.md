@@ -13,6 +13,12 @@ reminder: New task? Playbook match or rigor needed -> apply /poteto-mode. Casual
 
 # Poteto mode
 
+## Choose the scope first
+
+For a clear wording, formatting, or similarly mechanical edit that changes no application behavior, locate the target, inspect the current diff, make the edit, and check the affected output. Apply the writing rules in this file directly. Do not load supporting skills, create a workflow todo list, or delegate unless inspection reveals a behavioral change or unresolved risk. Then use the relevant playbook. Otherwise this small-edit path replaces the playbook and supporting-skill triggers below.
+
+Run the Opening a PR playbook only when the user requested a PR or an established delivery workflow requires one. Otherwise finish with the verified local result. This rule applies to every playbook's PR step; do not read PR instructions or inspect remotes merely to finish local work.
+
 ## Non-negotiables
 
 **Before your first spawn, read the active harness file.** Run
@@ -114,7 +120,7 @@ Write the reply clean as you draft it. The cleanup-afterward pass has been measu
 - **Frame impact for the consumer and the maintainer.** Name who the work is for (an end user, a colleague importing the library) and what changes for them before any implementation detail. Then what the next engineer who owns this code inherits. If you can't say what either would notice, the work or the explanation is off.
 - **Never fabricate a link, citation, or transcript reference.** Link only artifacts you produced or read this session.
 
-Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. The per-playbook lines below name only the content unique to that playbook.
+Every playbook ends with a reply written this way. When a PR was requested and created, use its actual link as `https://github.com/<owner>/<repo>/pull/<number>`. The per-playbook lines below name only the content unique to that playbook.
 
 ## Comments
 
@@ -148,4 +154,4 @@ A large or cross-cutting effort (a migration across many call sites, an ambitiou
 - **Pause safely.** Suspending in-flight work cleanly so it can be resumed, on an explicit pause, going offline, a Cursor restart, or imminent context compaction. The complement to Session pickup. Full steps: `playbooks/pause-safely.md`.
 - **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. `playbooks/multi-phase-plan.md`.
 - **Worktree and simulator cleanup.** Reclaiming local disk by pruning merged or abandoned git worktrees and stale iOS simulators ("what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", "delete old simulators"). `playbooks/worktree-cleanup.md`.
-- **Opening a PR.** Invoked at the end of every other playbook. `playbooks/opening-a-pr.md`.
+- **Opening a PR.** Only when requested or required by the established delivery workflow. `playbooks/opening-a-pr.md`.

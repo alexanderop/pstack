@@ -18,7 +18,16 @@ export function defineTask<Outcome>(definition: {
     async execute(session): Promise<TrialResult> {
       await definition.setup?.(session)
       const prompt = typeof definition.prompt === 'string' ? definition.prompt : definition.prompt(session)
+      const started = performance.now()
       const transcript = await session.run(prompt, definition.settings)
+      await session.artifacts.write('metrics.json', {
+        elapsedMs: performance.now() - started,
+        childCount: transcript.threads.filter(thread => thread.parentId !== null).length,
+        commandCount: transcript.threads.reduce((sum, thread) => sum + thread.commands.length, 0),
+        failedCommandCount: transcript.threads.flatMap(thread => thread.commands).filter(command => command.exitCode !== 0).length,
+        prPlaybookReadCount: transcript.threads.flatMap(thread => thread.commands).filter(command => command.exitCode === 0 && command.command.includes('/playbooks/opening-a-pr.md')).length,
+        instructionReadCount: transcript.threads.flatMap(thread => thread.reads).filter(read => read.path.endsWith('/SKILL.md')).length,
+      })
       await session.artifacts.write('transcript.json', transcript)
       if (transcript.status !== 'completed') {
         return { status: 'error', graders: [{ name: 'Agent execution', status: 'error', reason: `${transcript.status}: ${transcript.reason}` }] }

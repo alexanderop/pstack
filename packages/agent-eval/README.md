@@ -99,3 +99,10 @@ Only code-based graders are implemented. Model-based judges, human-review toolin
 The Codex adapter requires CLI 0.153.4 and an existing `auth.json`. Pass `executable` if a command shim depends on HOME. It links authentication into temporary state and removes the link during disposal. Credentials are not copied into artifacts. Each trial permits one root conversation and collects its descendants by parent ID.
 
 The environment provides filesystem convenience isolation, not a security sandbox for hostile code. Codex permissions control model-driven access. The pstack suite limits workers/concurrency to one and disables retries; independent Vitest processes do not share a concurrency budget. Process-tree cancellation is tested on macOS, not Windows. This is a private package with TypeScript source exports.
+
+The Codex adapter also records `injectedSkills` on normalized threads when native rollout user messages contain complete skill envelopes. This is separate from command-based file-read evidence. Adapters that do not expose native injection may omit the field. Agent self-reports, tool output, and ordinary mentions are not recognized as injected skills.
+
+
+Pass `plugin: 'none'` to `codexHarness` for a plain-Codex control. It leaves candidate storage empty, checks the pinned CLI version, rejects non-system discovered skills, and renders `session.skill` as the instruction alone. Calling `pluginFile` in this condition fails explicitly. Candidate metadata remains required by the shared session contract, but its files are not copied or installed.
+
+Tasks save `metrics.json` separately from grader results. Elapsed time wraps `session.run`; shell command and child counts come from the normalized transcript. They remain available when execution returns a non-completed status. A thrown adapter error can prevent metrics collection. These observations do not imply useful delegation or successful verification.
