@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/codex.ts",
+    ".": "./src/index.ts",
+    "./codex": "./src/codex.ts",
     "./vitest": "./src/vitest.ts",
     "./evidence": "./src/evidence.ts"
   },

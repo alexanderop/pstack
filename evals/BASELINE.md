@@ -38,3 +38,11 @@ Artifacts are ignored by Git and remain in this checkout. Each trial includes th
 - [Earlier missing-wrapper failure](../.eval-artifacts/2026-09-05T08-54-31.192Z-ebe198e9-86f7-42b5-9f86-22f8fa66e8c1/verdict.json)
 
 Comment review needs repeated trials before claiming reliability. Its mixed outcomes are preserved rather than hidden through retries. The read-evidence adapter's coverage limits are documented in the [package README](../packages/agent-eval/README.md).
+
+## Task and grader refactor verification
+
+The subsequent Vitest 5 refactor passed TypeScript and 30 unit/installation checks. A deterministic second adapter exercised the shared suite runner with two independent trials; it does not establish Claude Code or Copilot support.
+
+The final real Codex run passed native-child execution and comment review. Worktree protection remained red with `safe` instead of `verify-recent-chat`. See the [local final report](../.eval-artifacts/readable-evals-final.json). An earlier refactor trial recorded the correct comment edit as passing and the unrecognized wrapper read as `unknown`, preserving the distinction between outcome success and insufficient transcript evidence.
+
+Tasks now live under `evals/tasks/`; named graders save separate checks in `trial.json`. Repeated trials are explicitly registered with `PSTACK_EVAL_TRIALS`; failure retries remain disabled. Production plugin files are unchanged.

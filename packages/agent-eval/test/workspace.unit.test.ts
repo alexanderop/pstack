@@ -19,7 +19,7 @@ test('records changed and removed fixture files', async () => {
     await rm(join(workspace.project, 'src/b.txt'))
     expect(await workspace.changes()).toEqual(['src/a.txt', 'src/b.txt'])
     expect(workspace.env.HOME).toBe(workspace.home)
-    expect(workspace.env.CODEX_HOME).toBe(workspace.codexHome)
+    expect(workspace.env.CODEX_HOME).toBeUndefined()
     expect(workspace.env.CLAUDECODE).toBeUndefined()
   } finally { await workspace.dispose() }
   await expect(readFile(join(workspace.project, 'src/a.txt'))).rejects.toThrow()

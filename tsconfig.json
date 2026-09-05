@@ -4,5 +4,5 @@
     "strict": true, "noUncheckedIndexedAccess": true, "exactOptionalPropertyTypes": true,
     "noEmit": true, "skipLibCheck": true, "types": ["node"]
   },
-  "include": ["packages/**/*.ts", "evals/tests/**/*.ts", "vitest.config.ts"]
+  "include": ["packages/**/*.ts", "evals/**/*.ts", "vitest.config.ts"]
 }

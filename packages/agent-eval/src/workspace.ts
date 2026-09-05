@@ -1,5 +1,5 @@
-import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises'
-import { homedir, tmpdir } from 'node:os'
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { delimiter, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execute } from './process.js'
@@ -28,12 +28,11 @@ export async function fileHashes(root: string): Promise<Readonly<Record<string, 
 export async function createWorkspace() {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'pstack-eval-')))
   const home = join(root, 'home')
-  const codexHome = join(home, '.codex')
   const project = join(root, 'project')
   const candidate = join(root, 'candidate')
-  await Promise.all([mkdir(codexHome, { recursive: true }), mkdir(project), mkdir(candidate), mkdir(join(root, 'tmp'))])
+  await Promise.all([mkdir(home, { recursive: true }), mkdir(project), mkdir(candidate), mkdir(join(root, 'tmp'))])
   const env: NodeJS.ProcessEnv = {
-    PATH: [dirname(process.execPath), process.env.PATH].filter(Boolean).join(delimiter), HOME: home, USERPROFILE: home, CODEX_HOME: codexHome,
+    PATH: [dirname(process.execPath), process.env.PATH].filter(Boolean).join(delimiter), HOME: home, USERPROFILE: home,
     TMPDIR: join(root, 'tmp'), ZDOTDIR: home, LANG: 'en_US.UTF-8', TERM: 'dumb',
   }
   const profile = `export PATH='${(env.PATH ?? '').replaceAll("'", "'\\''")}'\n`
@@ -45,12 +44,7 @@ export async function createWorkspace() {
     return result
   }
   return {
-    root, home, codexHome, project, candidate, env, shell,
-    async authenticate() {
-      const auth = join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'auth.json')
-      if (!(await lstat(auth)).isFile()) throw new Error('Codex auth.json is unavailable')
-      await symlink(auth, join(codexHome, 'auth.json'))
-    },
+    root, home, project, candidate, env, shell,
     async seed(files: Readonly<Record<string, string>>, signal?: AbortSignal) {
       for (const [name, content] of Object.entries(files)) {
         const path = inside(project, name)

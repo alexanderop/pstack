@@ -1,41 +1,101 @@
-# Agent eval
+# Agent evaluations with Vitest 5
 
-A private TypeScript package that runs real Codex sessions from Vitest 5. It owns disposable workspaces, plugin installation, decoded thread evidence, subprocess cancellation, and immutable artifacts. Vitest owns test selection and assertions.
+Write a task once, then run independent trials through an agent-harness adapter. Vitest handles registration, selection, assertions, timeouts, and reporting. Codex is the only implemented production adapter.
+
+## Write a task
 
 ```ts
-import { codexTest } from '@pstack/agent-eval/vitest'
+import { defineTask, equal } from '@pstack/agent-eval'
 
-const test = codexTest({
-  candidate: {
-    root: '/path/to/plugin',
-    entries: ['.codex-plugin', '.claude-plugin', 'skills', 'agents', 'harness'],
-    name: 'example',
-    marketplace: 'example-marketplace',
+export const removeComment = defineTask({
+  id: 'remove-comment',
+  description: 'Remove a redundant comment without changing the code',
+  files: {
+    'answer.js': '// Return the answer.\nexport const answer = 42;\n',
   },
-  artifactRoot: '/path/to/results',
-  files: { 'README.md': 'A fixture.\n' },
-  model: 'gpt-6-astra',
-  reasoningEffort: 'medium',
-})
-
-test('the skill performs its task', async ({ codex, expect, annotate }) => {
-  await annotate(codex.artifacts.path)
-  const run = await codex.run('Use $example:my-skill to inspect README.md.')
-  expect(run.status).toBe('completed')
-  expect(run.changedPaths).toEqual([])
+  prompt: agent => agent.skill('no-comments',
+    'remove the redundant comment in answer.js. Do not change other files.'),
+  async observe({ environment }) {
+    return {
+      source: await environment.read('answer.js'),
+      changedPaths: await environment.changes(),
+    }
+  },
+  graders: {
+    'Correct edit': ({ outcome }) => [
+      equal('Application code preserved', outcome.source, 'export const answer = 42;\n'),
+      equal('Only requested file changed', outcome.changedPaths, ['answer.js']),
+    ],
+  },
 })
 ```
 
-Each fixture permits one root conversation. Native children belong to that conversation and are collected through their parent IDs. Create another fixture for another trial. `discover()` checks installation without starting a model turn. `command()` runs a real external verification command in the fixture and records its output and exit code. `workspace.read()` and `workspace.changes()` inspect the resulting files.
+A task owns its fixture, prompt, outcome observation, and success criteria. Optional `setup` prepares more complex environments, such as a merged Git worktree. Keep setup mechanics in a fixture helper when they obscure the task. `observe` reads actual environment state after the agent finishes; the agent's final message is not the outcome.
 
-The adapter currently requires Codex CLI 0.153.4. New runtime versions fail the version check until their protocol is verified. Pass `executable` when a command shim depends on the original home directory. Models and reasoning effort are caller settings; omitting them uses the isolated runtime's defaults. The pstack suite pins Astra/medium for reproducibility.
+## Register a suite
 
-`codex.run()` returns `completed`, `cancelled`, `timed-out`, or `infrastructure-failure`. A completed run is not a passing eval: the Vitest assertions determine the verdict. Failures retain execution and any collected evidence. Discovery, malformed protocol data, and incomplete child threads fail rather than becoming empty successful results.
+```ts
+import { evaluationSuite } from '@pstack/agent-eval/vitest'
+import { codexHarness } from '@pstack/agent-eval/codex'
+import { removeComment } from './tasks/remove-comment.js'
 
-Only successful runtime command actions classified as reads contribute read evidence. Agent messages, echoed paths, failed commands, and truncated output do not establish a read. This initial adapter does not recognize every possible file-access tool or prove that every byte was read. Tests requiring a complete file should also compare the captured output with its expected contents. Unknown evidence should never be treated as proof.
+evaluationSuite({
+  name: 'Plugin capabilities',
+  agentHarness: codexHarness({ model: 'gpt-6-astra', reasoningEffort: 'medium' }),
+  candidate: {
+    root: '/path/to/pstack',
+    entries: ['.codex-plugin', '.claude-plugin', 'skills', 'agents', 'harness', 'scripts'],
+    name: 'pstack',
+    marketplace: 'pstack',
+  },
+  artifactRoot: '/path/to/artifacts',
+  trials: 3,
+  tasks: [removeComment],
+})
+```
 
-Each artifact directory contains candidate and fixture hashes, the candidate snapshot, command results, the request, process output, decoded root and child threads, source rollout records, resulting workspace, normalized evidence, and a Vitest `verdict.json`. Setup failures receive their own artifact. JSON files use exclusive creation and cannot overwrite earlier evidence. To regrade parser behavior without model calls, pass a saved `thread-*.json` object's `thread` field to `readEvidence` from `@pstack/agent-eval/evidence`. A full regrade CLI and LLM judges are not implemented.
+Each task/trial pair becomes a separate Vitest test with a fresh session and environment. Multiple graders run even if one fails. Multiple checks appear separately in Vitest's failure report. `unknown` and grader errors also make the test non-passing, but retain their distinct statuses in `trial.json`. A passing edit cannot hide missing reviewer evidence.
 
-The fixture uses a separate home, Codex state, candidate cache, and Git repository. Discovery rejects personal or unrelated plugin skills. Login uses a temporary link to the existing Codex `auth.json`; credentials are not copied into artifacts. Fixture teardown removes the temporary directory and authentication link. Cancellation terminates the owned process group, including descendants, on the tested macOS runtime. Windows process-tree cleanup is not supported by this initial adapter.
+Trials are deliberate repeated attempts, not retries after a failure. This package reports every trial and its checks; it does not yet aggregate pass@k or pass^k, estimate reliability, or support weighted scoring. All checks must pass for the trial to pass. Individual checks preserve partial success for review.
 
-This is filesystem convenience isolation, not a security sandbox for hostile agents or code. Codex's own permission mode controls model-driven file access. The suite runs one test at a time; independently launched test processes have separate state but do not share a concurrency budget. Snapshot inputs are selected explicitly, and nested `node_modules` and `.git` directories are omitted. Fixture files are committed before execution so changes and deletions remain inspectable.
+## Terminology
+
+These names follow Anthropic's [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents).
+
+| Term | Meaning here |
+| --- | --- |
+| Task | One input scenario and its success criteria, defined with `defineTask` |
+| Trial | One attempt at a task in a fresh environment |
+| Grader | A named function assessing an aspect of the outcome or transcript |
+| Check | One assertion within a grader, with pass, fail, or unknown status |
+| Transcript | The trial's recorded interactions, including the root and child sessions |
+| Outcome | Observed final environment state, such as file contents or audit results |
+| Evaluation harness | This library together with Vitest, running and grading trials |
+| Agent harness | Codex, or a future Claude Code/Copilot adapter plus its model |
+| Evaluation suite | A named collection of tasks registered with `evaluationSuite` |
+
+`transcript.json` is the normalized view used by graders. The full native records remain separate artifacts; the normalized view is not the complete trace. `outcome.json` stores task-selected observations. `trial.json` records named graders and checks; `verdict.json` records Vitest's outcome. The Codex adapter also retains prompts, settings, hashes, process output, candidate snapshots, decoded threads, source rollouts, and resulting workspace files.
+
+## Add an agent harness
+
+Implement `AgentHarness` from `@pstack/agent-eval`, then pass it as `agentHarness` when registering the existing tasks. The adapter owns:
+
+1. Creating isolated state and installing the candidate using that harness's supported mechanism.
+2. Rendering a logical skill name through `session.skill(name, instruction)`.
+3. Starting the agent with the requested model, permissions, timeout, and cancellation signal.
+4. Saving native transcripts and normalizing root/child execution evidence into `Transcript`.
+5. Exposing the installed plugin path and environment operations, then disposing the session.
+
+Keep authentication, CLI flags, SDK schemas, and cache directories inside the adapter. The shared workspace does not set Codex state or authentication. See `src/types.ts` for the contract and `codexHarness` for the current adapter. The scripted adapter in `test/suite.unit.test.ts` proves the evaluation harness can run independently of Codex; it is a deterministic contract test, not evidence of Claude Code or Copilot support.
+
+An adapter must report unsupported operations and missing/incomplete transcripts as errors. It must not silently substitute another harness or fabricate tool evidence. Add real installation and execution contracts before claiming a new adapter works.
+
+## Evidence and isolation limits
+
+Use outcome graders wherever possible. Add transcript graders when the behavior itself matters, such as loading a required reviewer wrapper. `observedRead` accepts successful recognized reads; absent evidence is `unknown`. A combined shell command may contain a valid read but be classified as `unknown` by Codex. Inspect native command output before treating that as an agent failure. Echoed paths and agent self-reports are not read evidence.
+
+Only code-based graders are implemented. Model-based judges, human-review tooling, a regrade CLI, and aggregate metrics are future work. The existing evidence parser can regrade a saved decoded thread offline through `@pstack/agent-eval/evidence`.
+
+The Codex adapter requires CLI 0.153.4 and an existing `auth.json`. Pass `executable` if a command shim depends on HOME. It links authentication into temporary state and removes the link during disposal. Credentials are not copied into artifacts. Each trial permits one root conversation and collects its descendants by parent ID.
+
+The environment provides filesystem convenience isolation, not a security sandbox for hostile code. Codex permissions control model-driven access. The pstack suite limits workers/concurrency to one and disables retries; independent Vitest processes do not share a concurrency budget. Process-tree cancellation is tested on macOS, not Windows. This is a private package with TypeScript source exports.

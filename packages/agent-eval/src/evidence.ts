@@ -19,8 +19,9 @@ export function readEvidence(input: unknown) {
   }))
   const reads = commands.flatMap(command => {
     if (command.status !== 'completed' || command.exitCode !== 0 || !command.aggregatedOutput || /truncat(?:ed|ion)/i.test(command.aggregatedOutput)) return []
+    const output = command.aggregatedOutput
     return command.commandActions.flatMap(action => action.type === 'read' && action.path
-      ? [{ path: action.path, output: command.aggregatedOutput, itemId: command.id, turnId: command.turnId }]
+      ? [{ path: action.path, output, itemId: command.id, turnId: command.turnId }]
       : [])
   })
   return {

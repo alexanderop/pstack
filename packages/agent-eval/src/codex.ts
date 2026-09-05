@@ -1,4 +1,5 @@
-import { cp, readFile, readdir } from 'node:fs/promises'
+import { cp, lstat, mkdir, readFile, readdir, symlink } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { delimiter, dirname, isAbsolute, join } from 'node:path'
 import { z } from 'zod'
@@ -7,6 +8,7 @@ import { parentId, readEvidence, sessionMetadata } from './evidence.js'
 import { execute, type ProcessResult } from './process.js'
 import { openRpc } from './rpc.js'
 import { createWorkspace, fileHashes, inside } from './workspace.js'
+import type { AgentHarness } from './types.js'
 
 
 type ThreadEvidence = ReturnType<typeof readEvidence> & { parentId: string | null }
@@ -34,6 +36,8 @@ export async function createCodexTrial(options: {
 }) {
   const artifacts = await createArtifacts(options.artifactRoot)
   const workspace = await createWorkspace()
+  const codexHome = join(workspace.home, '.codex')
+  workspace.env.CODEX_HOME = codexHome
   const signal = options.signal
   const executable = options.executable ?? 'codex'
   if (isAbsolute(executable)) workspace.env.PATH = `${dirname(executable)}${delimiter}${workspace.env.PATH}`
@@ -42,6 +46,7 @@ export async function createCodexTrial(options: {
   let used = false
   let sequence = 0
   try {
+    await mkdir(codexHome)
     const fixtureHashes = await workspace.seed(options.files, signal)
     const candidateHashes = await workspace.snapshot(options.candidate.root, options.candidate.entries)
     await artifacts.write('inputs.json', { fixtureHashes, candidateHashes, isolation: 'filesystem-convenience-only' })
@@ -76,10 +81,10 @@ export async function createCodexTrial(options: {
       } finally { await rpc.dispose() }
     }
     async function collect(rootId: string) {
-      const entries = await readdir(join(workspace.codexHome, 'sessions'), { recursive: true })
+      const entries = await readdir(join(codexHome, 'sessions'), { recursive: true })
       const sessions = []
       for (const entry of entries.filter(entry => entry.endsWith('.jsonl'))) {
-        const raw = await readFile(join(workspace.codexHome, 'sessions', entry), 'utf8')
+        const raw = await readFile(join(codexHome, 'sessions', entry), 'utf8')
         const rows = raw.split('\n').filter(Boolean).map(line => record.parse(json(line)))
         const metaRow = rows.find(row => row.type === 'session_meta')
         if (!metaRow) throw new Error(`Session metadata missing: ${entry}`)
@@ -118,7 +123,9 @@ export async function createCodexTrial(options: {
         let observedChanges: string[] = []
         try {
           await discover()
-          await workspace.authenticate()
+          const auth = join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'auth.json')
+          if (!(await lstat(auth)).isFile()) throw new Error('Codex auth.json is unavailable')
+          await symlink(auth, join(codexHome, 'auth.json'))
           const result = await execute({
             command: executable, args: ['exec', '--ignore-rules', '--json', '-s', settings.sandbox ?? 'workspace-write', ...(options.model ? ['--model', options.model] : []), ...(options.reasoningEffort ? ['-c', `model_reasoning_effort=${JSON.stringify(options.reasoningEffort)}`] : []), '-C', settings.directory ? inside(workspace.root, settings.directory) : workspace.project, prompt],
             ...processOptions, timeoutMs: settings.timeoutMs ?? 180_000,
@@ -155,3 +162,39 @@ export async function createCodexTrial(options: {
 }
 
 export type CodexTrial = Awaited<ReturnType<typeof createCodexTrial>>
+
+export function codexHarness(settings: Pick<Parameters<typeof createCodexTrial>[0], 'executable' | 'model' | 'reasoningEffort'> = {}): AgentHarness {
+  return {
+    id: 'codex',
+    label: 'Codex',
+    async createSession(options) {
+      const trial = await createCodexTrial({ ...options, ...settings })
+      return {
+        environment: {
+          root: trial.workspace.root,
+          project: trial.workspace.project,
+          read: trial.workspace.read,
+          changes: trial.workspace.changes,
+          command: trial.command,
+        },
+        artifacts: trial.artifacts,
+        skill: (name, instruction) => `Use $${options.candidate.name}:${name} to ${instruction}`,
+        async pluginFile(path) { return inside((await trial.install()).installedPath, path) },
+        async run(prompt, settings) {
+          const result = await trial.run(prompt, settings)
+          const threads = result.threads.map(thread => ({
+            id: thread.id, parentId: thread.parentId, completed: thread.completed,
+            reads: thread.reads.map(read => ({ path: read.path, output: read.output })),
+            commands: thread.commands.map(command => ({
+              command: command.command, exitCode: command.exitCode, output: command.aggregatedOutput,
+            })),
+          }))
+          return result.status === 'completed'
+            ? { status: 'completed', rootId: result.rootId, threads }
+            : { status: result.status, reason: result.reason, rootId: result.rootId, threads }
+        },
+        dispose: trial.dispose,
+      }
+    },
+  }
+}
