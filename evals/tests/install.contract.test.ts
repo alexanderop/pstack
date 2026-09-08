@@ -1,4 +1,6 @@
 import { test, expect } from 'vitest'
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
 import { createCodexTrial } from '@pstack/agent-eval/codex'
 import { candidate, artifactRoot, executable } from './setup.js'
 
@@ -7,8 +9,9 @@ test('a clean Codex installation discovers the bundled skills without user confi
   try {
     await annotate(codex.artifacts.path)
     const skills = await codex.discover()
-    expect(skills).toHaveLength(44)
-    expect(skills.map(skill => skill.name)).toEqual(expect.arrayContaining(['pstack:poteto-mode', 'pstack:no-comments']))
+    const entries = await readdir(join(candidate.root, 'skills'), { withFileTypes: true })
+    const expectedNames = entries.filter(entry => entry.isDirectory()).map(entry => `pstack:${entry.name}`).sort()
+    expect(skills.map(skill => skill.name).sort()).toEqual(expectedNames)
     expect(skills.every(skill => skill.path.startsWith(codex.workspace.home))).toBe(true)
   } finally { await codex.dispose() }
 })

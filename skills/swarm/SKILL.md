@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # Swarm
 
+Before delegating, read [the harness instructions](../../harness/README.md) and the active harness file. Map agent names, tool arguments, and model roles there.
+
 Fan out N parallel cloud workers. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
 
 ## Start
@@ -23,7 +25,7 @@ Open a todolist with one entry per phase before launching anything.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
 3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
 4. Pick the worker model from `swarm workers` in `~/.pstack/models.md` when present. Otherwise use the active harness file's `swarm workers` default. For a model race, name each arm's model up front, and skip the race entirely on a harness with no per-subagent model override.
-5. Give each worker its own writable output when it writes. Use a worktree, branch, or `/tmp/swarm-<slug>/worker-<n>/`.
+5. Give each worker its own writable output when it writes.
 
 ## Phase B: Fan out
 

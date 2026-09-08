@@ -44,7 +44,6 @@ judgment and prose: fable
 hardest tasks: opus
 how explorer: sonnet
 how explainer: fable
-how critics: fable, opus, sonnet, haiku
 why investigators: sonnet
 why synthesizer: fable
 reflect tooling: sonnet

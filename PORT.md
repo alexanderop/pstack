@@ -1,132 +1,96 @@
 # What this port changed
 
-Upstream: [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/main/pstack)
-at `bdf7aa3`, version 0.14.3. The first commit in this repo is that tree
-unmodified, so `git diff <first-commit>..HEAD` is the complete port.
+This port tracks [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/71ed0d1/pstack)
+at `71ed0d1`, version 0.15.0. It includes the same 47 skills and every upstream
+file. The initial import was `bdf7aa3`, version 0.14.3, recorded as this
+repository's first commit. That initial commit is historical, not the current
+sync baseline.
 
-## The shape of the change
+## Shared skills, separate harness instructions
 
-All four harnesses read the same on-disk layout — `skills/<name>/SKILL.md`,
-`agents/*.md`, `references/`, `scripts/`. Only the manifest directory differs,
-and Copilot CLI and Codex both accept the Claude one. So the port is not a
-rewrite; it is four manifests plus an indirection layer.
+The skill names, playbooks, reference files, scripts, and agent instructions
+follow upstream. Runtime-specific paths, model choices, tool arguments, and
+agent registration resolve through `harness/`. Shared principle and prose
+skills remain byte-identical wherever possible.
 
-Every fact that is true only in Cursor now lives in `harness/`, one file per
-harness plus `harness/built-ins.md` for the cross-harness tool mapping. Skills
-say "read the active harness file" instead of naming a Cursor path or slug.
-`scripts/detect-harness.sh` names the active one.
+Run this against an upstream checkout to verify the inventory, versions, and
+bundled files, and report the number of unchanged skill entrypoints:
 
-That keeps the 34 principle and prose skills byte-identical to upstream, so
-rebasing on poteto's updates stays cheap. `scripts/sync-upstream.sh` shows the
-drift.
+```sh
+python3 scripts/check-upstream.py /path/to/plugins/pstack
+```
 
-## Manifests
+`scripts/sync-upstream.sh` clones current upstream, runs that check, and shows
+the port diff. It does not modify this checkout.
 
-| file | for |
-|---|---|
-| `.claude-plugin/plugin.json` | Claude Code, Copilot CLI, and Codex's fallback |
-| `.claude-plugin/marketplace.json` | self-hosting, so the repo is its own marketplace |
-| `.codex-plugin/plugin.json` | Codex, with its `interface` block |
-| `.cursor-plugin/plugin.json` | Cursor, unchanged from upstream |
+The 0.15.0 update includes the two new principles, `make-bot-ui`, shorter
+`how` and `why` instructions, removal of `how`'s critique mode, and PR workflows
+that use GitHub CLI or Origin without requiring Graphite. Cursor's model
+mapping follows the new Fable 5.1 defaults. Other harnesses keep their own
+supported model mappings.
 
-## What was rewritten
+## Port adaptations
 
-- **`skills/setup-pstack/SKILL.md`** — rewritten. Detects the harness first, then
-  the models, and writes `~/.pstack/models.md` instead of
-  `~/.cursor/rules/pstack-models.mdc`. The new path is harness-independent and
-  outside every harness's own config directory, so pstack never rewrites a file
-  the user hand-edits.
-- **Model slugs** — every hardcoded `gpt-5.6-sol-max` / `grok-4.6-fast-xhigh` /
-  `claude-fable-5-thinking-max` / `claude-opus-5-thinking-xhigh` now resolves
-  through a role name. Roles are the same names upstream uses.
-- **Transcript reads** (`recall`, `reflect`, `show-me-your-work`, `automate-me`,
-  the `eval` and `session-pickup` playbooks, `worktree-audit.sh`) — point at the
-  harness file. Two harnesses are not a per-workspace jsonl directory at all.
-- **Project-skill writes** (`create-verification-skill`,
-  `maintain-verification-skill`, `automate-me`) — `.cursor/skills/` became the
-  harness's project-local skill path.
-- **Subagent vocabulary** — `Task tool` and `subagent_type: generalPurpose` are
-  named per harness rather than assumed.
-- **Cursor built-ins and `cursor-team-kit`** (`/deslop`, `control-ui`,
-  `control-cli`, `create-skill`, `/loop`, built-in babysit) — mapped in
-  `harness/built-ins.md`.
-- **`name: Poteto Mode` → `poteto-mode`, `name: Comment Sicko` → `comment-sicko`**
-  — Claude Code validates skill and agent names as lowercase-hyphen. The
-  capitalized upstream names fail to register.
+- `.claude-plugin/` and `.codex-plugin/` provide installation metadata alongside
+  upstream's `.cursor-plugin/`. All plugin manifests use the upstream version.
+- `setup-pstack` detects the harness and writes `~/.pstack/models.md`. Skills
+  consult that file rather than writing model choices into Cursor rules.
+- Delegating skills read the active harness instructions before spawning.
+  Codex uses native delegation when available. If a named agent is absent,
+  a general-purpose child reads the same bundled agent instruction file.
+- Transcript lookups use the active harness's storage and remain scoped to the
+  current workspace. Generated Codex skills use `.agents/skills/`.
+- Skill and agent frontmatter names match their lowercase directory or file
+  names. `make-bot-ui` follows the same convention.
+- Existing small-edit routing remains. PR steps run only when the user asks for
+  a PR or the established delivery workflow requires one.
+- The new testing principle's examples distinguish weak assertions from ones
+  that accept `undefined`. For example, `toBeDefined` rejects `undefined`, but
+  still does not prove a specific result is correct.
 
-## What does not survive the trip
+The reusable eval library and local checks are port additions. They do not
+change the upstream skill inventory.
 
-Four things, stated plainly rather than papered over.
+## Runtime limits
 
-1. **Cross-family model panels.** `arena`, `interrogate`, `architect`, and
-   `how`'s critics exist to get disagreement from genuinely different models.
-   Claude Code, Codex, and Copilot CLI are each single-family. The panels still
-   fan out — four independent reads is most of the value — but four capability
-   tiers is not four vendors, and panel agreement is worth less. The skills now
-   say so in their own output rather than implying otherwise. Arena's
-   cross-judge degrades the most.
+Model panels use models exposed by the active session. Repeating one model
+preserves independent reads, but does not provide cross-family disagreement.
+Reports must name that limitation when it applies.
 
-2. **Cursor's sticky mode.** `poteto-mode`'s `mode: true` / `reminder` is a
-   Cursor concept: the mode stays armed and re-injects its reminder every turn.
-   `hooks/poteto-mode-reminder.sh` is a `UserPromptSubmit` equivalent for Claude
-   Code and Codex, deliberately **opt-in** and gated on `~/.pstack/armed`. No
-   `hooks.json` ships, because a plugin that injects text into every prompt
-   without being asked is a bad neighbor. Copilot CLI has no equivalent; type
-   `/poteto-mode` per task.
+Cursor's sticky mode metadata is not portable. The existing reminder hook is
+opt-in and gated on `~/.pstack/armed`; no automatic `hooks.json` is shipped.
+A local background worker is not a durable cloud agent. Map loops and cloud
+steps through the active harness and report unavailable capabilities.
 
-3. **Cloud agents.** Playbooks that detach work to a Cursor cloud agent
-   (`orchestrate`, `shipping`, `autopilot-full`, `autopilot-stack`, `swarm`) have
-   no true equivalent. Backgrounded local subagents in their own worktrees are
-   the substitute, and they die with the session. Where a playbook's value
-   depends on durability, it degrades — an overnight run is the clearest case.
+`make-bot-ui` is included, but creating Grok Bot routines and collecting keys
+requires Cursor's external tools. On Codex it can build against a supplied
+webhook and server-side credential configuration. It must report when routine
+creation or the live wake cannot be verified. `automations/benny/` remains an
+upstream Cursor-only sub-pack.
 
-4. **`automations/benny/`** is **not ported.** It is an optional sub-pack with
-   its own installer that writes `.cursor/automations/benny/` and edits
-   `.cursor/settings.json`. It is shipped here unmodified so nothing is lost,
-   but it works on Cursor only. Porting it means redoing its setup skill against
-   each harness's project-config file, which is a separate job.
+Codex custom agents use TOML configuration. Bundling `agents/*.md` does not
+prove those names registered, so the port supports reading their instructions
+through a general-purpose child instead. No user agent configuration is
+rewritten during installation.
 
-## Verified, not assumed
+The upstream `disable-model-invocation` frontmatter remains. Its enforcement is
+host-specific; discovery tests alone do not establish invocation behavior.
 
-All three installs were run against this tree, and three of the port's decisions
-came out of what they reported rather than out of the docs.
+## Verification
 
-- **`"agents"` in `.claude-plugin/plugin.json` is omitted on purpose.** As a
-  string it fails validation outright (`agents: Invalid input`). As an array of
-  paths it validates and installs — and then registers **zero** agents, because
-  declaring it suppresses the auto-discovery that actually works. No key at all
-  is the only form that yields `Agents (2)`.
-- **Agent files stay `*.md`, not `*.agent.md`.** Copilot CLI's own convention is
-  the `.agent.md` suffix, and Claude Code does discover those files — but it
-  names an agent from its *filename*, so the suffix produces `poteto-agent.agent`
-  and silently breaks every `subagent_type: "poteto-agent"` call in
-  `poteto-mode`. Plain `.md` registers correctly on Claude Code, Codex, and
-  Cursor. The cost is that Copilot CLI registers the skills but not the two
-  agents; they are thin routing wrappers, so the loss is small and the alternative
-  breaks the main harness.
-- **Codex ingests `disable-model-invocation: true`; its authoring linter rejects
-  it.** `plugin-creator/scripts/validate_plugin.py` fails all 39 skills carrying
-  the key with "must be false". That is the lint, not the install gate:
-  `compound-engineering` ships the same key, fails the same check, and is
-  installed and enabled in Codex. `codex plugin add pstack@pstack` succeeds here
-  too. The real consequence is behavioral, not fatal — those 39 skills stay
-  model-invokable on Codex instead of being user-invoked only.
+`bash scripts/validate.sh` checks manifests, skill and agent names, and
+Cursor-only path leaks. `pnpm check` checks TypeScript. `pnpm test` runs unit
+checks and installs this candidate into an isolated Codex environment to
+compare the discovered skills with the repository inventory.
 
-Install results on this machine:
+Live behavior is a separate check through `pnpm eval:codex` and the acceptance
+suites. An installation check does not establish that every workflow runs
+correctly on every harness.
 
-| harness | command | result |
-|---|---|---|
-| Claude Code | `claude plugin install pstack@pstack` | 44 skills, 2 agents |
-| Codex | `codex plugin add pstack@pstack` | 44 skills, read `.claude-plugin/marketplace.json` |
-| Copilot CLI | `copilot plugin install <path>` | 44 skills, 0 agents |
-
-`scripts/validate.sh` re-checks the manifests, every skill and agent name, and
-that no Cursor-only path leaked back into `skills/`.
-
-## Copilot CLI specifics
-
-Copilot installs the Claude manifest directly and discovers `skills/` and
-`agents/` the same way. Its own agent files use an `.agent.md` suffix; plain
-`.md` is still picked up, so `agents/*.md` work unchanged. It has no
-per-subagent model override, so `/setup-pstack` writes `inherit-parent` for
-every role there.
+For the 0.15.0 sync, all 42 unit and installation tests passed with the direct
+Codex 0.153.4 executable. The live `comments.acceptance.test.ts` check also
+passed: a child read the bundled Comment Sicko instructions, removed the
+redundant comment, and preserved the license, application code, and file scope.
+The upstream inventory check, TypeScript check, plugin validation, and
+`git diff --check` passed. Other live workflows and harness installs were not
+rerun for this update.

@@ -23,9 +23,9 @@ Run `scripts/detect-harness.sh` from the pstack plugin root. It prints
 `claude-code`, `codex`, `copilot-cli`, `cursor`, or `unknown`.
 
 On `unknown`, decide from your own tool surface rather than from which config
-directories exist on disk — a developer who uses all four harnesses has all
+directories exist on disk. A developer who uses all four harnesses has all
 four directories. The subagent tool is the giveaway: `Agent` and `Workflow`
-mean Claude Code, `Task` means Cursor, `shell` plus `~/.codex/agents/*.toml`
+mean Claude Code, `Task` means Cursor, `spawn_agent` or `collaboration.spawn_agent`
 means Codex. Ask the user if you still cannot tell.
 
 Read `harness/<detected>.md` in full. Everything in steps 2 through 5 depends on
@@ -59,7 +59,7 @@ roles, offering the detected models plus `inherit-parent` and `auto` (both mean:
 this role runs on the parent chat model) as the options. Prefer a structured
 question over free text.
 
-For panel roles (how critics, arena runners, architect runners, interrogate
+For panel roles (arena runners, architect runners, interrogate
 reviewers) the value is a list, and one subagent runs per entry, alias entries
 included, so the list length sets the fan-out. `arena cross-judge pool` is also
 a list, but Arena selects one value from it whose model family differs from the
@@ -98,7 +98,6 @@ judgment and prose: <slug>
 hardest tasks: <slug>
 how explorer: <slug>
 how explainer: <slug>
-how critics: <slug>, <slug>, <slug>, <slug>
 why investigators: <slug>
 why synthesizer: <slug>
 reflect tooling: <slug>
@@ -126,5 +125,5 @@ Check whether the project has a way to drive the real app for proof (a
 project-local verification skill, so agents can drive the app the way a user
 does and prove changes work? I can generate one with
 /create-verification-skill." On yes, invoke `/create-verification-skill`
-(resolves wherever pstack is installed — workspace, user, or plugin). On no,
+(resolves wherever pstack is installed: workspace, user, or plugin). On no,
 move on without pushing.
