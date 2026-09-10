@@ -57,8 +57,10 @@ Model panels use models exposed by the active session. Repeating one model
 preserves independent reads, but does not provide cross-family disagreement.
 Reports must name that limitation when it applies.
 
-Cursor's sticky mode metadata is not portable. The existing reminder hook is
-opt-in and gated on `~/.pstack/armed`; no automatic `hooks.json` is shipped.
+Cursor's sticky mode metadata is not portable. Session hooks run
+automatically in Claude Code and Codex. The complete skill is injected
+in numbered parts. The optional per-prompt reminder is gated on `~/.pstack/armed`.
+See `hooks/README.md` for setup and Codex hook trust.
 A local background worker is not a durable cloud agent. Map loops and cloud
 steps through the active harness and report unavailable capabilities.
 

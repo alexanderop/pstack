@@ -59,5 +59,6 @@ else
 fi
 
 echo
+python3 "$root/scripts/check-session-hook.py" || fail=1
 [ "$fail" -eq 0 ] && echo "PASS" || echo "FAIL"
 exit "$fail"

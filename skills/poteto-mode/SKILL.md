@@ -4,7 +4,7 @@ description: poteto's agent style for concise, detailed responses, deliberate su
 disable-model-invocation: true
 # mode/icon/color/reminder are Cursor-only and ignored elsewhere. Cursor arms
 # this skill as a sticky mode and re-injects `reminder` every turn; no other
-# harness has that. See hooks/README.md for an opt-in Claude Code equivalent.
+# harness has that. Bundled SessionStart hooks load this file in Claude Code and Codex.
 mode: true
 icon: crown
 color: yellow

@@ -58,7 +58,9 @@ copilot plugin install pstack@pstack
 two steps:
 
 1. run [`/setup-pstack`](./skills/setup-pstack/SKILL.md). it detects your harness, then the models you have access to, and writes `~/.pstack/models.md`.
-2. use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) whenever you're doing anything that requires rigor.
+2. Claude Code and Codex load `poteto-mode` automatically through the bundled
+   [session hooks](./hooks/README.md). In Codex, trust the hooks in `/hooks` first.
+   Other harnesses can use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) explicitly.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs.
 
@@ -66,7 +68,7 @@ that's it. the other skills are situational. the mode uses them as needed. model
 
 ## usage
 
-use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) at the start of a task. it reads your request, picks from a set of playbooks, and runs the other skills as the steps need them.
+Claude Code and Codex load [`poteto-mode`](./skills/poteto-mode/SKILL.md) through the session hooks above. On other harnesses, invoke `/poteto-mode` at the start of a task. It reads your request, picks a playbook, and runs the other skills as needed.
 
 ### just use [`/poteto-mode`](./skills/poteto-mode/SKILL.md)
 

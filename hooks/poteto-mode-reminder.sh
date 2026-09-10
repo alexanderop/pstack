@@ -4,8 +4,7 @@
 # Cursor arms `poteto-mode` as a mode and re-injects its `reminder` line on every
 # turn. Claude Code has no mode concept, so this hook does the re-injection.
 #
-# It is OPT-IN. This plugin deliberately ships no hooks.json, because a plugin
-# that silently injects text into every one of your prompts is a bad neighbor.
+# This optional per-prompt reminder supplements the automatic SessionStart hook.
 # Wire it up yourself — see hooks/README.md.
 #
 # Fires only while ~/.pstack/armed exists, so /poteto-mode stays something you
