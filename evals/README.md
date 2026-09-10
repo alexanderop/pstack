@@ -1,5 +1,7 @@
 # Pstack Codex evals
 
+See [the Vue component comparison](VUE-COMPONENTS.md) for paired runs with and without the Vue composition principle.
+
 Run real Codex behavior through Vitest 5 before changing the plugin. The compatibility fixes remain out of scope for this first eval-library change.
 
 See the [measured baseline](BASELINE.md) for results and local evidence from real Codex runs.

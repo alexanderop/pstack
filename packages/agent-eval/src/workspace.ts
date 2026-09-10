@@ -26,7 +26,7 @@ export async function fileHashes(root: string): Promise<Readonly<Record<string, 
 }
 
 export async function createWorkspace() {
-  const root = await realpath(await mkdtemp(join(tmpdir(), 'pstack-eval-')))
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'workbench-')))
   const home = join(root, 'home')
   const project = join(root, 'project')
   const candidate = join(root, 'candidate')
