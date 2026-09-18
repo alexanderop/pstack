@@ -38,6 +38,58 @@ type DiffState =
 
 Pick one discriminant name (`kind`, `type`, `tag`) and stick to it.
 
+## Expected failures as values
+
+Use a discriminated result for recoverable failures. Prefer structured error variants over strings callers must parse. Reuse the repository's Result abstraction when it has one; this small union needs no library.
+
+```ts
+type Result<T, E> =
+  | { kind: "success"; value: T }
+  | { kind: "failure"; error: E };
+
+type DivisionError = { kind: "division-by-zero" };
+
+function divide({
+  dividend,
+  divisor,
+}: {
+  dividend: number;
+  divisor: number;
+}): Result<number, DivisionError> {
+  if (divisor === 0) {
+    return { kind: "failure", error: { kind: "division-by-zero" } };
+  }
+  return { kind: "success", value: dividend / divisor };
+}
+
+function calculateAverageSpeed(input: {
+  distance: number;
+  time: number;
+}): Result<string, DivisionError> {
+  const result = divide({ dividend: input.distance, divisor: input.time });
+  if (result.kind === "failure") return result;
+  return { kind: "success", value: `${result.value} km/h` };
+}
+
+function describeSpeed(result: Result<string, DivisionError>): string {
+  if (result.kind === "success") return result.value;
+
+  const error = result.error;
+  switch (error.kind) {
+    case "division-by-zero":
+      return "Time must be non-zero to calculate average speed.";
+    default: {
+      const _exhaustive: never = error.kind;
+      return _exhaustive;
+    }
+  }
+}
+```
+
+This example models division by zero only; validate other domain constraints at the input boundary. `calculateAverageSpeed` propagates the failure, and `describeSpeed` handles it. Adding an error variant makes the exhaustive handler fail compilation until it handles that case.
+
+TypeScript does not enforce consumption of a returned Result. Review call sites for explicit handling or propagation; avoid unchecked unwrapping. Catch expected exceptions from external APIs at their adapter boundary and convert them into typed errors, preserving useful context. Let unexpected defects remain distinguishable. In Effect-based code, use the existing typed error channel instead of nesting a Result inside it.
+
 ## Constructive modeling
 
 Build the type from parts that are all legal instead of restricting a loose type with runtime checks.

@@ -1,6 +1,6 @@
 # Steer with principle names
 
-pstack ships 25 principles as individual skills. `/poteto-mode` reads their index at the start of every multi-step task, applies the ones the task triggers, and names each applied principle in its reply along with the decision it changed.
+pstack ships 26 principles as individual skills. `/poteto-mode` reads their index at the start of every multi-step task, applies the ones the task triggers, and names each applied principle in its reply along with the decision it changed.
 
 You don't invoke principles. You use their names to steer. Each name points at a complete rule the agent has already read, so one phrase redirects the work more precisely than a paragraph of instructions.
 
@@ -26,7 +26,7 @@ separate before serializing shared state. give each attempt its own worktree, no
 
 Each phrase lands because the rule behind it is specific. The agent still has to say, in its reply, which decision the rule changed. A principle citation with no decision behind it is the tell that it name-dropped instead of applying.
 
-## The 25, briefly
+## The 26, briefly
 
 The core principles decide how much to build and when to rethink the design:
 
@@ -46,6 +46,7 @@ The architecture principles decide where state, validation, and compatibility li
 - [Compose Vue Components](../../skills/principle-compose-vue-components/SKILL.md) designs accessibility first and organizes component logic into named local concerns.
 - [Model the Domain](../../skills/principle-model-the-domain/SKILL.md) encodes repeated rules in one structure, not scattered conditionals.
 - [Boundary Discipline](../../skills/principle-boundary-discipline/SKILL.md) validates at the boundary and trusts internal types.
+- [Keep the Application Independent](../../skills/principle-keep-the-application-independent/SKILL.md) gives the application ownership of both port contracts and proves behavior with replaceable external adapters.
 - [Type System Discipline](../../skills/principle-type-system-discipline/SKILL.md) makes illegal states unrepresentable.
 - [Make Operations Idempotent](../../skills/principle-make-operations-idempotent/SKILL.md) converges retries on the same end state.
 - [Migrate Callers Then Delete Legacy APIs](../../skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md) migrates and deletes in one wave.
