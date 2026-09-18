@@ -7,36 +7,48 @@
 # Usage: worktree-audit.sh [repo-path]   (defaults to the current repo)
 set -u
 
+for dependency in git jq rg; do
+	command -v "$dependency" >/dev/null || { echo "missing required command: $dependency" >&2; exit 1; }
+done
+
+plugin_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+
 repo="${1:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 [ -z "$repo" ] && { echo "not in a git repo; pass a repo path" >&2; exit 1; }
 cd "$repo" || exit 1
 
 # Main worktree is the first entry; everything else is a candidate.
-main_wt=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')
+main_wt=$(git worktree list --porcelain | sed -n 's/^worktree //p' | head -1)
 
-# origin/main drives the merge check. Best-effort; stale is fine for a first pass.
-git fetch origin main --quiet 2>/dev/null || echo "warn: could not fetch origin/main; merged column may be stale" >&2
+# Cached refs only: an audit must not fetch or change repository state.
+# Staleness makes the audit conservative. Revalidate before deletion.
+git rev-parse --verify origin/main >/dev/null 2>&1 || echo "warn: origin/main unavailable; merge state is unknown" >&2
 
 # PR state by branch, fetched once. Empty if gh is unavailable.
 prs=$(mktemp)
+trap 'rm -f "$prs"' EXIT
 gh pr list --author "@me" --state all --limit 1000 \
 	--json number,state,headRefName 2>/dev/null > "$prs" || echo "[]" > "$prs"
 
-# Transcripts dir, per harness. Cursor slugifies the repo path with the leading
-# slash dropped; Claude Code keeps it. Codex and Copilot CLI have no
-# per-workspace directory, so LAST_CHAT is simply blank there.
-if [ -n "${CLAUDECODE:-}" ] || [ -n "${CLAUDE_CODE_ENTRYPOINT:-}" ]; then
-	slug=$(printf '%s' "$main_wt" | sed 's#/#-#g')
-	transcripts="$HOME/.claude/projects/$slug"
-else
-	slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
-	transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
-fi
+harness=$("$plugin_root/scripts/detect-harness.sh")
+case "$harness" in
+  claude-code)
+    slug=$(printf '%s' "$main_wt" | sed 's#/#-#g')
+    transcripts="$HOME/.claude/projects/$slug"
+    ;;
+  cursor)
+    slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
+    transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
+    ;;
+  copilot-cli) transcripts="" ;;
+  *) transcripts="${CODEX_HOME:-$HOME/.codex}/sessions" ;;
+esac
 now=$(date +%s)
 
 printf "SIZE\tAGE\tMERGED\tDIRTY\tREMOTE\tPR\tLAST_CHAT\tBUCKET\tWORKTREE\n"
 
-git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt; do
+git worktree list --porcelain -z | while IFS= read -r -d '' record; do
+	case "$record" in 'worktree '*) wt=${record#worktree } ;; *) continue ;; esac
 	[ "$wt" = "$main_wt" ] && continue
 
 	size=$(du -sh "$wt" 2>/dev/null | awk '{print $1}')
@@ -44,13 +56,13 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 	head_ts=$(git -C "$wt" log -1 --format='%ct' HEAD 2>/dev/null || echo 0)
 	age=$([ "$head_ts" -gt 0 ] 2>/dev/null && echo "$(( (now - head_ts) / 86400 ))d" || echo "?")
 
-	# Squash-merged branches are not ancestors of main, so PR state is the
-	# real signal; merge-base only catches fast-forward/rebase merges.
+	# A merged PR alone does not prove the current head is preserved: commits
+	# may have been added after its merge. Only ancestry gets the safe bucket.
 	git merge-base --is-ancestor "$head" origin/main 2>/dev/null && merged=YES || merged=no
 
-	# Distinguish real WIP (tracked edits) from disposable untracked scratch.
-	porcelain=$(git -C "$wt" status --porcelain 2>/dev/null)
-	if [ -z "$porcelain" ]; then dirty=clean
+	# Untracked files are user data too, never disposable by inference.
+	if ! porcelain=$(git -C "$wt" status --porcelain 2>/dev/null); then dirty=unknown
+	elif [ -z "$porcelain" ]; then dirty=clean
 	elif printf '%s\n' "$porcelain" | grep -qv '^??'; then
 		dirty="wip:$(printf '%s\n' "$porcelain" | grep -cv '^??')"
 	else dirty="scratch:$(printf '%s\n' "$porcelain" | grep -c '^??')"; fi
@@ -67,21 +79,30 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 		'.[] | select(.headRefName==$b) | "#\(.number)/\(.state)"' "$prs" 2>/dev/null | head -1)
 	[ -z "$pr" ] && pr="-"
 
-	# Most recent chat whose transcript operated in this worktree. Match path
-	# followed by "/" or a quote so glint-482 does not match glint-482-r37.
 	last="-"; last_ts=0
 	if [ -d "$transcripts" ]; then
-		f=$(rg -l -e "${wt}/" -e "${wt}\"" "$transcripts" 2>/dev/null \
-			| xargs stat -f '%m %N' 2>/dev/null | sort -rn | head -1)
-		if [ -n "$f" ]; then last_ts=$(echo "$f" | awk '{print $1}')
-			last=$(date -r "$last_ts" '+%Y-%m-%d' 2>/dev/null); fi
+		while IFS= read -r -d '' transcript; do
+			case "$harness" in
+			  claude-code|cursor)
+			    # Keep legacy harness lookup scoped to this repository's transcript directory.
+			    rg -q -F -e "${wt}/" -e "${wt}\"" "$transcript" || continue
+			    ;;
+			  *)
+			    # A quoted path in a conversation does not establish session ownership.
+			    head -n 1 "$transcript" | jq -e --arg wt "$wt" '.type == "session_meta" and .payload.cwd == $wt' >/dev/null 2>&1 || continue
+			    ;;
+			esac
+			stamp=$(stat -f '%m' "$transcript" 2>/dev/null || stat -c '%Y' "$transcript" 2>/dev/null)
+			if [ "$stamp" -gt "$last_ts" ] 2>/dev/null; then last_ts=$stamp; fi
+		done < <(rg --files --hidden -0 "$transcripts" 2>/dev/null)
+		if [ "$last_ts" -gt 0 ]; then last=$(date -r "$last_ts" '+%Y-%m-%d' 2>/dev/null || date -d "@$last_ts" '+%Y-%m-%d' 2>/dev/null); fi
 	fi
 	recent=$([ "$last_ts" -gt 0 ] 2>/dev/null && [ $(( (now - last_ts) / 86400 )) -le 4 ] && echo yes || echo no)
 
-	case "$dirty" in wip:*) bucket=hold-wip ;; *)
+	case "$dirty" in wip:*|scratch:*|unknown) bucket=hold-wip ;; *)
 		case "$pr" in *OPEN*) bucket=hold-open-pr ;; *)
 			if [ "$recent" = yes ]; then bucket=verify-recent-chat
-			elif [ "$merged" = YES ] || [ "$pr" != "-" ]; then bucket=safe
+			elif [ "$merged" = YES ]; then bucket=safe
 			else bucket=review; fi ;;
 		esac ;;
 	esac

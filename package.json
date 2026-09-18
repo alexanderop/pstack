@@ -7,7 +7,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "vitest run --project unit --project contracts",
+    "test": "pnpm test:helpers && vitest run --project unit --project contracts",
     "test:unit": "vitest run --project unit",
     "check": "tsc --noEmit",
     "eval:codex": "PSTACK_LIVE_EVALS=1 vitest run --project live-codex",
@@ -18,7 +18,8 @@
     "eval:report": "node evals/scripts/report.mjs",
     "eval:vue": "PSTACK_LIVE_EVALS=1 vitest run --project vue-comparison",
     "eval:vue:pack": "node evals/scripts/vue-review-packet.mjs",
-    "eval:vue:recheck": "vitest run --project vue-replay"
+    "eval:vue:recheck": "vitest run --project vue-replay",
+    "test:helpers": "node --test skills/poteto-mode/scripts/check-plan.test.mjs skills/poteto-mode/scripts/worktree-audit.test.mjs"
   },
   "devDependencies": {
     "@pstack/agent-eval": "workspace:*",

@@ -15,7 +15,7 @@ if expected != actual:
     failures.append(f'Skill inventory differs: missing {sorted(expected - actual)}, extra {sorted(actual - expected)}')
 version = json.loads((upstream / '.cursor-plugin/plugin.json').read_text())['version']
 for manifest in ['.cursor-plugin/plugin.json', '.claude-plugin/plugin.json', '.codex-plugin/plugin.json']:
-    if json.loads((root / manifest).read_text())['version'] != version:
+    if json.loads((root / manifest).read_text())['version'].split('+', 1)[0] != version:
         failures.append(f'{manifest}: expected version {version}')
 missing = [p.relative_to(upstream).as_posix() for p in upstream.rglob('*')
            if p.is_file() and not (root / p.relative_to(upstream)).is_file()]

@@ -18,7 +18,8 @@ fork it. improve it. make it yours. PRs are welcome!
 > — subagent tool, model slugs, transcript paths, project-skill paths — into
 > `harness/`, one file per harness. See [PORT.md](./PORT.md) for exactly what
 > changed and what does not survive the trip. This port tracks upstream 0.15.0
-> and includes all 47 skills. `make-bot-ui` requires Cursor routine tools or an
+> and includes all 47 upstream skills plus our Vue composition principle.
+> `make-bot-ui` requires Cursor routine tools or an
 > existing webhook supplied by the user.
 
 ## install
@@ -30,12 +31,16 @@ fork it. improve it. make it yours. PRs are welcome!
 /plugin install pstack@pstack
 ```
 
-**Codex** — falls back to the Claude manifest:
+**Codex** — uses the native `.agents/plugins/marketplace.json`:
 
 ```bash
 codex plugin marketplace add https://github.com/alexanderop/pstack
 codex plugin add pstack@pstack
 ```
+
+For a local install, run `bash scripts/install-codex.sh` from a separate clean
+checkout. The installer rejects dependency and evaluation directories to keep
+them out of the plugin cache. It does not edit personal agent definitions.
 
 **GitHub Copilot CLI** — reads the Claude manifest as-is:
 
@@ -58,9 +63,14 @@ copilot plugin install pstack@pstack
 two steps:
 
 1. run [`/setup-pstack`](./skills/setup-pstack/SKILL.md). it detects your harness, then the models you have access to, and writes `~/.pstack/models.md`.
-2. Claude Code and Codex load `poteto-mode` automatically through the bundled
-   [session hooks](./hooks/README.md). In Codex, trust the hooks in `/hooks` first.
-   Other harnesses can use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) explicitly.
+2. Invoke [`poteto-mode`](./skills/poteto-mode/SKILL.md) when needed. Use
+   `$poteto-mode` in Codex or `/poteto-mode` in Claude Code. To keep it active
+   for a task, explicitly ask to use it throughout that task.
+
+No session or prompt hooks are bundled. After updating an older installation,
+start a new task; already-injected context remains in existing conversations.
+Remove any per-prompt reminder you previously wired up manually. Codex leaf
+skills are explicit-only, except setup; Poteto reads the ones its workflow needs.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs.
 
@@ -68,7 +78,7 @@ that's it. the other skills are situational. the mode uses them as needed. model
 
 ## usage
 
-Claude Code and Codex load [`poteto-mode`](./skills/poteto-mode/SKILL.md) through the session hooks above. On other harnesses, invoke `/poteto-mode` at the start of a task. It reads your request, picks a playbook, and runs the other skills as needed.
+Invoke [`poteto-mode`](./skills/poteto-mode/SKILL.md) explicitly at the start of a task (`$poteto-mode` in Codex). It reads your request, picks a playbook, and runs the other skills as needed.
 
 ### just use [`/poteto-mode`](./skills/poteto-mode/SKILL.md)
 

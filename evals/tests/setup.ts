@@ -3,7 +3,7 @@ import { codexHarness } from '@pstack/agent-eval/codex'
 
 export const candidate = {
   root: resolve(import.meta.dirname, '../..'), name: 'pstack', marketplace: 'pstack',
-  entries: ['.codex-plugin', '.claude-plugin', '.cursor-plugin', 'skills', 'agents', 'assets', 'harness', 'hooks', 'scripts'],
+  entries: ['.agents', '.codex-plugin', '.claude-plugin', '.cursor-plugin', 'skills', 'agents', 'assets', 'harness', 'scripts'],
 }
 export const artifactRoot = resolve(candidate.root, '.eval-artifacts')
 export const executable = process.env.PSTACK_CODEX_BIN ?? 'codex'

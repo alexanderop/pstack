@@ -1,0 +1,5 @@
+interface:
+  display_name: "arena"
+  short_description: "Run this pstack workflow when explicitly invoked."
+policy:
+  allow_implicit_invocation: false

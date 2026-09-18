@@ -8,7 +8,7 @@ bad() { printf '  FAIL  %s\n' "$*"; fail=1; }
 
 echo "manifests"
 for m in .claude-plugin/plugin.json .claude-plugin/marketplace.json \
-         .codex-plugin/plugin.json .cursor-plugin/plugin.json; do
+         .codex-plugin/plugin.json .cursor-plugin/plugin.json .agents/plugins/marketplace.json; do
 	if [ -f "$root/$m" ] && python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$root/$m" 2>/dev/null; then
 		note "ok    $m"
 	else
@@ -59,6 +59,6 @@ else
 fi
 
 echo
-python3 "$root/scripts/check-session-hook.py" || fail=1
+python3 "$root/scripts/check-codex-package.py" || fail=1
 [ "$fail" -eq 0 ] && echo "PASS" || echo "FAIL"
 exit "$fail"

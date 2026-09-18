@@ -1,0 +1,5 @@
+interface:
+  display_name: "principle-foundational-thinking"
+  short_description: "Run this pstack workflow when explicitly invoked."
+policy:
+  allow_implicit_invocation: false

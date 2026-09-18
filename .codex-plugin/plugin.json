@@ -1,6 +1,6 @@
 {
   "name": "pstack",
-  "version": "0.15.2",
+  "version": "0.15.2+codex.20260918075933",
   "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
   "author": {
     "name": "Lauren Tan"
@@ -22,6 +22,14 @@
     "displayName": "pstack",
     "shortDescription": "go deep first. write less, higher quality code.",
     "developerName": "Lauren Tan",
-    "category": "Developer Tools"
+    "category": "Developer Tools",
+    "longDescription": "Explicitly invoked engineering workflows, review personas, and principles with harness-aware delegation and verification.",
+    "defaultPrompt": [
+      "Use $poteto-mode for this task."
+    ],
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
   }
 }

@@ -2,7 +2,8 @@
 
 This port tracks [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/71ed0d1/pstack)
 at `71ed0d1`, version 0.15.0. It includes the same 47 skills and every upstream
-file. The initial import was `bdf7aa3`, version 0.14.3, recorded as this
+file, plus the local Vue composition principle (48 skills total). The initial
+import was `bdf7aa3`, version 0.14.3, recorded as this
 repository's first commit. That initial commit is historical, not the current
 sync baseline.
 
@@ -32,7 +33,8 @@ supported model mappings.
 ## Port adaptations
 
 - `.claude-plugin/` and `.codex-plugin/` provide installation metadata alongside
-  upstream's `.cursor-plugin/`. All plugin manifests use the upstream version.
+  upstream's `.cursor-plugin/`. Plugin manifests retain the base version; Codex
+  may add a cachebuster suffix.
 - `setup-pstack` detects the harness and writes `~/.pstack/models.md`. Skills
   consult that file rather than writing model choices into Cursor rules.
 - Delegating skills read the active harness instructions before spawning.
@@ -57,10 +59,12 @@ Model panels use models exposed by the active session. Repeating one model
 preserves independent reads, but does not provide cross-family disagreement.
 Reports must name that limitation when it applies.
 
-Cursor's sticky mode metadata is not portable. Session hooks run
-automatically in Claude Code and Codex. The complete skill is injected
-in numbered parts. The optional per-prompt reminder is gated on `~/.pstack/armed`.
-See `hooks/README.md` for setup and Codex hook trust.
+Cursor's sticky mode metadata is not portable. Claude Code and Codex require
+explicit invocation. No session-start injection or prompt-reminder hooks ship.
+A request to use Poteto throughout a task remains a task-scoped instruction.
+The native Codex marketplace preserves this repository's root plugin layout.
+`agents/openai.yaml` makes all skills except setup explicit-only on Codex;
+routing skills read their leaf instructions directly.
 A local background worker is not a durable cloud agent. Map loops and cloud
 steps through the active harness and report unavailable capabilities.
 
@@ -75,8 +79,9 @@ prove those names registered, so the port supports reading their instructions
 through a general-purpose child instead. No user agent configuration is
 rewritten during installation.
 
-The upstream `disable-model-invocation` frontmatter remains. Its enforcement is
-host-specific; discovery tests alone do not establish invocation behavior.
+The upstream `disable-model-invocation` frontmatter remains for other harnesses.
+Codex uses its native `allow_implicit_invocation` metadata. Discovery and metadata
+checks do not establish end-to-end model behavior.
 
 ## Verification
 
@@ -96,3 +101,16 @@ redundant comment, and preserved the license, application code, and file scope.
 The upstream inventory check, TypeScript check, plugin validation, and
 `git diff --check` passed. Other live workflows and harness installs were not
 rerun for this update.
+
+## Selective Codex adapter improvements
+
+Adapted from [ScriptedAlchemy/pstack-codex at 594accc](https://github.com/ScriptedAlchemy/pstack-codex/tree/594accc):
+Codex invocation metadata, native marketplace packaging, conservative worktree
+auditing, and plan-template regression tests. The audit retains Claude Code and
+Cursor lookup, uses Codex session ownership metadata, preserves untracked work,
+and requires ancestry before suggesting a safe bucket. It reads cached refs;
+cleanup still needs fresh verification before deletion.
+
+`pnpm test:helpers` runs the audit fixtures and checks populated plans against the
+shipped template. Our small-edit routing, PR authorization boundary, and behavior
+evaluations remain. Benny polling and the HTTP bridge were not imported.

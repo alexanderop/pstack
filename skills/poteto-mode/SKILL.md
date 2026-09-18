@@ -4,7 +4,7 @@ description: poteto's agent style for concise, detailed responses, deliberate su
 disable-model-invocation: true
 # mode/icon/color/reminder are Cursor-only and ignored elsewhere. Cursor arms
 # this skill as a sticky mode and re-injects `reminder` every turn; no other
-# harness has that. Bundled SessionStart hooks load this file in Claude Code and Codex.
+# harness has that. Claude Code and Codex require explicit invocation.
 mode: true
 icon: crown
 color: yellow
@@ -12,6 +12,11 @@ reminder: New task? Playbook match or rigor needed -> apply /poteto-mode. Casual
 ---
 
 # Poteto mode
+
+On Codex, invoke `$poteto-mode` explicitly. When asked to use it throughout a task,
+keep that instruction for the current task. Read routed leaf skills directly;
+their explicit invocation policy does not prevent this workflow from using them.
+Do not activate the mode automatically in unrelated tasks.
 
 ## Choose the scope first
 
