@@ -1,6 +1,6 @@
 # Steer with principle names
 
-pstack ships 23 principles as individual skills. `/poteto-mode` reads their index at the start of every multi-step task, applies the ones the task triggers, and names each applied principle in its reply along with the decision it changed.
+pstack ships 25 principles as individual skills. `/poteto-mode` reads their index at the start of every multi-step task, applies the ones the task triggers, and names each applied principle in its reply along with the decision it changed.
 
 You don't invoke principles. You use their names to steer. Each name points at a complete rule the agent has already read, so one phrase redirects the work more precisely than a paragraph of instructions.
 
@@ -26,7 +26,7 @@ separate before serializing shared state. give each attempt its own worktree, no
 
 Each phrase lands because the rule behind it is specific. The agent still has to say, in its reply, which decision the rule changed. A principle citation with no decision behind it is the tell that it name-dropped instead of applying.
 
-## The 23, briefly
+## The 25, briefly
 
 The core principles decide how much to build and when to rethink the design:
 
@@ -43,6 +43,7 @@ The core principles decide how much to build and when to rethink the design:
 
 The architecture principles decide where state, validation, and compatibility live:
 
+- [Compose Vue Components](../../skills/principle-compose-vue-components/SKILL.md) designs accessibility first and organizes component logic into named local concerns.
 - [Model the Domain](../../skills/principle-model-the-domain/SKILL.md) encodes repeated rules in one structure, not scattered conditionals.
 - [Boundary Discipline](../../skills/principle-boundary-discipline/SKILL.md) validates at the boundary and trusts internal types.
 - [Type System Discipline](../../skills/principle-type-system-discipline/SKILL.md) makes illegal states unrepresentable.
@@ -52,6 +53,7 @@ The architecture principles decide where state, validation, and compatibility li
 
 The verification principles define what counts as proof:
 
+- [Test Where the Failure Happens](../../skills/principle-test-where-the-failure-happens/SKILL.md) plans Given/When/Then scenarios, tests UI in real browsers, and shares page objects and data factories across Vitest Browser Mode and Playwright.
 - [Prove It Works](../../skills/principle-prove-it-works/SKILL.md) verifies the real artifact, not a proxy.
 - [Fix Root Causes](../../skills/principle-fix-root-causes/SKILL.md) reproduces and traces to the cause before changing code.
 - [Sequence Work into Verifiable Units](../../skills/principle-sequence-verifiable-units/SKILL.md) ends each small unit in a check before starting the next.

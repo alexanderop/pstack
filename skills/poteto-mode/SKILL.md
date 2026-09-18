@@ -42,6 +42,8 @@ Remaining triggers:
 - Nontrivial change, architecture decision, or "are we sure?" → the **how** skill.
 - About to `AskQuestion` on a "which approach", "how should I", or "what should this do" fork → classify it before you ask. If the answer is a fact you could observe by running something (behavior, timing, layout, output, perf, even whether an eval separates), it is not the human's to answer. Sketch it via the Prototype playbook (`playbooks/prototype.md`) and let the result decide. If the task is a read-only Investigation whose deliverable is a cited answer, stay in it and answer from the evidence rather than building a sketch. Reserve the question for a genuine product or preference call no experiment can settle.
 - Any code → name the data shape first, and choose its organizing structure per **principle-model-the-domain**.
+- Building or refactoring Vue components → read and apply **principle-compose-vue-components** (`../principle-compose-vue-components/SKILL.md`).
+- Planning frontend features, fixing UI regressions, or choosing frontend test coverage → read and apply **principle-test-where-the-failure-happens** (`../principle-test-where-the-failure-happens/SKILL.md`).
 - Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.
 - Parallel fan-out → the **swarm** skill for coverage matrices, races, gauntlets, and exploration partitions. Use **arena** for design or code bakeoffs with base selection and grafting.
 - Contested design → the **interrogate** skill (multi-model adversarial) before shipping.
@@ -76,6 +78,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Architecture**
 
+- **Compose Vue Components** (**principle-compose-vue-components**). Building or refactoring Vue components. Design accessibility first, compose named concerns at the top, implement local composables below, and pass reactive dependencies explicitly. Keep simple components simple and express layout variants through composition.
 - **Model the Domain** (**principle-model-the-domain**). Writing stateful logic, or code that branches a lot or repeats a shape assumption across files. Encode the domain in a structure (state machine, typed model, table or registry, reducer, boundary, the right collection) instead of scattered conditionals.
 - **Boundary Discipline** (**principle-boundary-discipline**). Wiring validation, error handling, or framework adapters. Guards at system boundaries, trust internal types, keep business logic pure.
 - **Type System Discipline** (**principle-type-system-discipline**). Designing types or a signature in any typed language. Make illegal states unrepresentable, brand primitives, parse external data at boundaries.
@@ -85,6 +88,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Verification**
 
+- **Test Where the Failure Happens** (**principle-test-where-the-failure-happens**). Planning frontend behavior or choosing its tests. Plan Given/When/Then scenarios, run UI tests in a real browser, share page objects and data factories across Vitest Browser Mode and Playwright, and retain tests of real application boundaries.
 - **Prove It Works** (**principle-prove-it-works**). After a task, before declaring done. Verify against the real artifact, not a proxy or "it compiles".
 - **Fix Root Causes** (**principle-fix-root-causes**). Debugging. Trace each symptom to its root cause, reproduce first, ask why until you reach it.
 - **Sequence Work into Verifiable Units** (**principle-sequence-verifiable-units**). Multi-step work (sweeps, migrations, runs of similar edits) and how you stack commits and PRs. Break work into small units that each end in a check, verify each before the next, and order delivery so the sequence proves itself.
