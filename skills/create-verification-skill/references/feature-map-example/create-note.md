@@ -15,7 +15,7 @@ Create note lets a user save a titled note from the browser or CLI, cancel an un
 - Press `n` in the browser while focus is outside an editable field.
 - Run `notes create --title <title> --body <body>` in a terminal.
 
-## Driving it with control-notes
+## Driving it with agent-browser and control-notes
 
 Preconditions:
 
@@ -23,13 +23,13 @@ Preconditions:
 - No note is titled `Release checklist`.
 - `control-notes doctor` reports the expected URL and disposable data directory.
 
-- **Open editor.** Choose `New note`. Run `control-notes browser click --role button --name "New note"`. A form named `Note editor` appears with focus in the `Title` textbox.
-- **Enter content.** Type the title and body. Run `control-notes browser fill --role textbox --name "Title" --value "Release checklist"` and `control-notes browser fill --role textbox --name "Body" --value "Tag and publish"`. The `Save note` button becomes enabled.
-- **Save note.** Choose `Save note`. Run `control-notes browser click --role button --name "Save note"`. A status named `Note saved` appears and the heading reads `Release checklist`.
-- **Confirm persistence.** Return to the note list and reopen the note. Run `control-notes browser click --role link --name "All notes"` and `control-notes browser click --role link --name "Release checklist"`. The editor shows both saved values.
-- **Cancel draft.** Open a new note, enter `Discard me`, and choose `Cancel`. Run `control-notes browser click --role button --name "New note"`, `control-notes browser fill --role textbox --name "Title" --value "Discard me"`, and `control-notes browser click --role button --name "Cancel"`. The note list returns and has no `Discard me` link.
+- **Open editor.** Choose `New note`. Run `agent-browser --session "notes-$RUN_ID" find role button click --name "New note" --exact`. A form named `Note editor` appears with focus in the `Title` textbox.
+- **Enter content.** Type the title and body. Run `agent-browser --session "notes-$RUN_ID" find role textbox fill "Release checklist" --name "Title" --exact` and `agent-browser --session "notes-$RUN_ID" find role textbox fill "Tag and publish" --name "Body" --exact`. The `Save note` button becomes enabled.
+- **Save note.** Choose `Save note`. Run `agent-browser --session "notes-$RUN_ID" find role button click --name "Save note" --exact`. A status named `Note saved` appears and the heading reads `Release checklist`.
+- **Confirm persistence.** Return to the note list and reopen the note. Run `agent-browser --session "notes-$RUN_ID" find role link click --name "All notes" --exact` and `agent-browser --session "notes-$RUN_ID" find role link click --name "Release checklist" --exact`. The editor shows both saved values.
+- **Cancel draft.** Open a new note, enter `Discard me`, and choose `Cancel`. Run `agent-browser --session "notes-$RUN_ID" find role button click --name "New note" --exact`, `agent-browser --session "notes-$RUN_ID" find role textbox fill "Discard me" --name "Title" --exact`, and `agent-browser --session "notes-$RUN_ID" find role button click --name "Cancel" --exact`. The note list returns and has no `Discard me` link.
 - **CLI entry.** Create a second note. Run `control-notes cli -- notes create --title "CLI note" --body "Created from terminal" --format json`. Exit code `0` and stdout contain the new note ID and title.
-- **Proof.** Reopen both saved notes from `All notes`. Run `control-notes browser snapshot --aria --path artifacts/create-note/list.aria.txt` and `control-notes browser screenshot --path artifacts/create-note/list.png`. The artifacts show `Release checklist` and `CLI note`.
+- **Proof.** Reopen both saved notes from `All notes`. Run `agent-browser --session "notes-$RUN_ID" snapshot > artifacts/create-note/list.aria.txt` and `agent-browser --session "notes-$RUN_ID" screenshot artifacts/create-note/list.png`. The artifacts show `Release checklist` and `CLI note`.
 
 ## Gotchas
 

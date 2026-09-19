@@ -1,5 +1,0 @@
-interface:
-  display_name: "Keep the Application Independent"
-  short_description: "Own port contracts and keep adapters outside the application."
-policy:
-  allow_implicit_invocation: false

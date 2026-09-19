@@ -70,7 +70,9 @@ two steps:
 No session or prompt hooks are bundled. After updating an older installation,
 start a new task; already-injected context remains in existing conversations.
 Remove any per-prompt reminder you previously wired up manually. Codex leaf
-skills are explicit-only, except setup; Poteto reads the ones its workflow needs.
+skills are explicit-only, except setup and `browse-web`; Poteto reads the ones its workflow needs. Website tasks can select `browse-web` automatically without enabling Poteto mode.
+
+For website browsing, interaction, screenshots, and live frontend verification, pstack uses the installed [Vercel `agent-browser` CLI](https://agent-browser.dev/) through [browse-web](./skills/browse-web/SKILL.md). Run `agent-browser --version` and `agent-browser doctor` to check the prerequisite. Existing automated test suites keep their runners.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs.
 
@@ -240,10 +242,10 @@ pstack also ships [Comment Sicko](./agents/comment-sicko.md), a read-only commen
 
 ## principles
 
-twenty-six short skills, one principle each. `poteto-mode` indexes them inline and reads that index at task start. the standalone files are there so other skills can reference a principle by name, and so the index can point at the full rule for each.
+twenty-five short skills, one principle each. `poteto-mode` indexes them inline and reads that index at task start. the standalone files are there so other skills can reference a principle by name, and so the index can point at the full rule for each.
 
 <details>
-<summary>all twenty-six principles</summary>
+<summary>all twenty-five principles</summary>
 
 | principle | group | rule |
 |---|---|---|
@@ -260,7 +262,6 @@ twenty-six short skills, one principle each. `poteto-mode` indexes them inline a
 | [compose-vue-components](./skills/principle-compose-vue-components/SKILL.md) | architecture | Design accessibility first, compose named concerns at the top, and implement local composables below. |
 | [model-the-domain](./skills/principle-model-the-domain/SKILL.md) | architecture | Encode the domain in a structure instead of scattered conditionals. |
 | [boundary-discipline](./skills/principle-boundary-discipline/SKILL.md) | architecture | Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions. |
-| [keep-the-application-independent](./skills/principle-keep-the-application-independent/SKILL.md) | architecture | Let the application own both port contracts, supply adapters externally, and prove behavior with test dependencies. |
 | [type-system-discipline](./skills/principle-type-system-discipline/SKILL.md) | architecture | Make illegal states unrepresentable, brand semantic primitives, parse external data at boundaries, refuse to lie to the compiler, exhaust variants, derive from authoritative schemas. |
 | [make-operations-idempotent](./skills/principle-make-operations-idempotent/SKILL.md) | architecture | Converge to the same end state regardless of partial prior runs. |
 | [migrate-callers-then-delete-legacy-apis](./skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md) | architecture | Migrate callers and delete the old API in the same wave instead of preserving compatibility layers. |
@@ -281,7 +282,7 @@ twenty-six short skills, one principle each. `poteto-mode` indexes them inline a
 a few things `poteto-mode` references but doesn't bundle:
 
 - `/deslop` and the `deslop` skill ship in the `cursor-team-kit` plugin.
-- `control-cli` (for CLIs and TUIs) and `control-ui` (for browser, Electron, web) ship in `cursor-team-kit` too.
+- `control-cli` (for CLIs and TUIs) ships in `cursor-team-kit` too. Browser work uses pstack’s own [browse-web](./skills/browse-web/SKILL.md) skill and the separately installed `agent-browser` CLI.
 - `/create-skill` is a cursor built-in. cursor also ships a built-in `/babysit`; inside `poteto-mode`, the [babysit playbook](./skills/poteto-mode/playbooks/babysit.md) supersedes it for pr-status requests.
 
 install `cursor-team-kit` alongside pstack if you want the full set.

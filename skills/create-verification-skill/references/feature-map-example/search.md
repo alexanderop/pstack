@@ -17,7 +17,7 @@ Search lets a user find notes by title or body text, inspect a matching note, an
 - Press `/` in the browser while focus is outside an editable field.
 - Run `notes search <query>` in a terminal.
 
-## Driving it with control-notes
+## Driving it with agent-browser and control-notes
 
 Preconditions:
 
@@ -25,16 +25,16 @@ Preconditions:
 - The disposable data directory contains `Quarterly plan` with body text `Draft budget`.
 - `control-notes doctor` reports the expected URL and data directory.
 
-- **Toolbar entry.** Choose the `Search` button. Run `control-notes browser click --role button --name "Search"`. A dialog named `Search notes` appears with focus in its searchbox.
-- **Keyboard entry.** Close the dialog, focus the page, and press `/`. Run `control-notes browser press --key "/"`. The same dialog appears and the page does not insert a slash.
-- **Title match.** Type `quarterly`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "quarterly"`. The `Search results` list contains `Quarterly plan` and does not contain `Grocery list`.
-- **Body match.** Replace the query with `budget`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "budget"`. The result `Quarterly plan` remains visible with a body-match excerpt.
-- **Open result.** Choose `Quarterly plan`. Run `control-notes browser click --role link --name "Quarterly plan"`. The dialog closes and the editor heading reads `Quarterly plan`.
-- **Empty state.** Reopen search and enter `volcano`. Run `control-notes browser fill --role searchbox --name "Search notes" --value "volcano"`. A status named `No matching notes` appears after search completes.
-- **Clear query.** Choose `Clear search`. Run `control-notes browser click --role button --name "Clear search"`. The searchbox is empty and the `Recent notes` region replaces the result list.
+- **Toolbar entry.** Choose the `Search` button. Run `agent-browser --session "notes-$RUN_ID" find role button click --name "Search" --exact`. A dialog named `Search notes` appears with focus in its searchbox.
+- **Keyboard entry.** Close the dialog, focus the page, and press `/`. Run `agent-browser --session "notes-$RUN_ID" press "/"`. The same dialog appears and the page does not insert a slash.
+- **Title match.** Type `quarterly`. Run `agent-browser --session "notes-$RUN_ID" find role searchbox fill "quarterly" --name "Search notes" --exact`. The `Search results` list contains `Quarterly plan` and does not contain `Grocery list`.
+- **Body match.** Replace the query with `budget`. Run `agent-browser --session "notes-$RUN_ID" find role searchbox fill "budget" --name "Search notes" --exact`. The result `Quarterly plan` remains visible with a body-match excerpt.
+- **Open result.** Choose `Quarterly plan`. Run `agent-browser --session "notes-$RUN_ID" find role link click --name "Quarterly plan" --exact`. The dialog closes and the editor heading reads `Quarterly plan`.
+- **Empty state.** Reopen search and enter `volcano`. Run `agent-browser --session "notes-$RUN_ID" find role searchbox fill "volcano" --name "Search notes" --exact`. A status named `No matching notes` appears after search completes.
+- **Clear query.** Choose `Clear search`. Run `agent-browser --session "notes-$RUN_ID" find role button click --name "Clear search" --exact`. The searchbox is empty and the `Recent notes` region replaces the result list.
 - **CLI match.** Search from the terminal. Run `control-notes cli -- notes search "quarterly" --format json`. Exit code `0` and stdout contain one object whose title is `Quarterly plan`.
 - **CLI miss.** Search for an absent value. Run `control-notes cli -- notes search "volcano" --format json`. Exit code `0` and stdout are `[]`.
-- **Proof.** Capture the populated result state. Run `control-notes browser snapshot --aria --path artifacts/search/results.aria.txt` and `control-notes browser screenshot --path artifacts/search/results.png`. Both artifacts identify Notes, the query, and `Quarterly plan`.
+- **Proof.** Capture the populated result state. Run `agent-browser --session "notes-$RUN_ID" snapshot > artifacts/search/results.aria.txt` and `agent-browser --session "notes-$RUN_ID" screenshot artifacts/search/results.png`. Both artifacts identify Notes, the query, and `Quarterly plan`.
 
 ## Gotchas
 

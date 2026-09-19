@@ -20,8 +20,10 @@ for filename in ('hooks/hooks.json', 'hooks.json', '.codex/hooks.json'):
     assert not (root / filename).exists(), f'Automatic hooks must not ship: {filename}'
 skills = sorted((root / 'skills').glob('*/SKILL.md'))
 for skill in skills:
-    if skill.parent.name == 'setup-pstack':
+    if skill.parent.name in ('setup-pstack', 'browse-web'):
         continue
     metadata = (skill.parent / 'agents/openai.yaml').read_text()
     assert '\npolicy:\n  allow_implicit_invocation: false\n' in metadata, skill
-print(f'PASS: native marketplace, {len(skills) - 1} explicit-only skills, no automatic hooks')
+browser_metadata = (root / 'skills/browse-web/agents/openai.yaml').read_text()
+assert '\npolicy:\n  allow_implicit_invocation: true\n' in browser_metadata
+print(f'PASS: native marketplace, {len(skills) - 2} explicit-only skills, browser discovery enabled, no automatic hooks')

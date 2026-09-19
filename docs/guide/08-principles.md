@@ -46,7 +46,6 @@ The architecture principles decide where state, validation, and compatibility li
 - [Compose Vue Components](../../skills/principle-compose-vue-components/SKILL.md) designs accessibility first and organizes component logic into named local concerns.
 - [Model the Domain](../../skills/principle-model-the-domain/SKILL.md) encodes repeated rules in one structure, not scattered conditionals.
 - [Boundary Discipline](../../skills/principle-boundary-discipline/SKILL.md) validates at the boundary and trusts internal types.
-- [Keep the Application Independent](../../skills/principle-keep-the-application-independent/SKILL.md) gives the application ownership of both port contracts and proves behavior with replaceable external adapters.
 - [Type System Discipline](../../skills/principle-type-system-discipline/SKILL.md) makes illegal states unrepresentable.
 - [Make Operations Idempotent](../../skills/principle-make-operations-idempotent/SKILL.md) converges retries on the same end state.
 - [Migrate Callers Then Delete Legacy APIs](../../skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md) migrates and deletes in one wave.

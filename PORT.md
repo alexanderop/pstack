@@ -63,7 +63,7 @@ Cursor's sticky mode metadata is not portable. Claude Code and Codex require
 explicit invocation. No session-start injection or prompt-reminder hooks ship.
 A request to use Poteto throughout a task remains a task-scoped instruction.
 The native Codex marketplace preserves this repository's root plugin layout.
-`agents/openai.yaml` makes all skills except setup explicit-only on Codex;
+`agents/openai.yaml` makes all skills except setup and `browse-web` explicit-only on Codex;
 routing skills read their leaf instructions directly.
 A local background worker is not a durable cloud agent. Map loops and cloud
 steps through the active harness and report unavailable capabilities.
