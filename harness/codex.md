@@ -1,5 +1,16 @@
 # Harness: Codex
 
+## Browser and desktop verification
+
+Use pstack [browse-web](../skills/browse-web/SKILL.md) to select the driver.
+Prefer the installed `computer-use:computer-use` skill when its required
+runtime is available in the current session. Read and follow that skill;
+pstack does not bundle its runtime. CLI and desktop sessions may expose
+different tools, so check availability rather than inferring it from Codex
+or an installed skill file. If unavailable, report the missing capability
+and use `agent-browser` for web surfaces unless the user requires Computer Use.
+Keep automated test suites on their existing runners.
+
 ## Subagent spawn
 
 Prefer the native subagent tools exposed in the current session, such as

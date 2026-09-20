@@ -1,5 +1,5 @@
 interface:
   display_name: "Browse websites"
-  short_description: "Browse and verify websites with agent-browser."
+  short_description: "Browse and verify websites with the active harness."
 policy:
   allow_implicit_invocation: true

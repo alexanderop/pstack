@@ -72,7 +72,7 @@ start a new task; already-injected context remains in existing conversations.
 Remove any per-prompt reminder you previously wired up manually. Codex leaf
 skills are explicit-only, except setup and `browse-web`; Poteto reads the ones its workflow needs. Website tasks can select `browse-web` automatically without enabling Poteto mode.
 
-For website browsing, interaction, screenshots, and live frontend verification, pstack uses the installed [Vercel `agent-browser` CLI](https://agent-browser.dev/) through [browse-web](./skills/browse-web/SKILL.md). Run `agent-browser --version` and `agent-browser doctor` to check the prerequisite. Existing automated test suites keep their runners.
+For website browsing, interaction, screenshots, and live frontend verification, pstack selects a driver through [browse-web](./skills/browse-web/SKILL.md). Codex prefers the installed Computer Use skill when its runtime is available in the session; otherwise it reports the missing capability and falls back to the installed [Vercel `agent-browser` CLI](https://agent-browser.dev/). Other harnesses use `agent-browser`. Explicit user tool requirements take precedence. For the CLI route, run `agent-browser --version` and `agent-browser doctor` to check the prerequisite. Existing automated test suites keep their runners.
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs.
 
@@ -282,7 +282,7 @@ twenty-five short skills, one principle each. `poteto-mode` indexes them inline 
 a few things `poteto-mode` references but doesn't bundle:
 
 - `/deslop` and the `deslop` skill ship in the `cursor-team-kit` plugin.
-- `control-cli` (for CLIs and TUIs) ships in `cursor-team-kit` too. Browser work uses pstack’s own [browse-web](./skills/browse-web/SKILL.md) skill and the separately installed `agent-browser` CLI.
+- `control-cli` (for CLIs and TUIs) ships in `cursor-team-kit` too. Browser work uses pstack’s own [browse-web](./skills/browse-web/SKILL.md) skill, which selects Computer Use for capable Codex sessions and the separately installed `agent-browser` CLI otherwise.
 - `/create-skill` is a cursor built-in. cursor also ships a built-in `/babysit`; inside `poteto-mode`, the [babysit playbook](./skills/poteto-mode/playbooks/babysit.md) supersedes it for pr-status requests.
 
 install `cursor-team-kit` alongside pstack if you want the full set.

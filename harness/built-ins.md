@@ -13,7 +13,7 @@ available — do not silently skip the step, and do not invent a slash command.
 | `create-skill` (authoring a SKILL.md) | built-in | `skill-creator` skill | `skill-creator` (system skill) | none — author the file directly |
 | `/loop` (wake mechanism) | built-in | `/loop` | native wait tools within the session; a scheduling tool only when available and configured | none — poll a background job |
 | `/deslop` (`cursor-team-kit`) | plugin | none — use pstack's own **unslop** skill | none — **unslop** | none — **unslop** |
-| Website/browser work (including upstream `control-ui` calls) | pstack **browse-web** → `agent-browser` | same | same | same |
+| Website/browser work (including upstream `control-ui` calls) | pstack **browse-web** → `agent-browser` | same | pstack **browse-web** → Computer Use when available; otherwise `agent-browser` | pstack **browse-web** → `agent-browser` |
 | `control-cli` (`cursor-team-kit`) | plugin | none — generate one with `/create-verification-skill` | shell tools, or a generated verification skill | same |
 | built-in babysit | built-in | none — the **Babysit** playbook is the answer | same | same |
 | cloud agent | built-in | see "long-running work" in the harness file | same | same |
@@ -23,7 +23,7 @@ Two notes worth keeping straight:
 - pstack already ships **unslop** and **no-comments**. On every harness but
   Cursor they replace `/deslop` outright rather than supplementing it. The
   upstream text that runs both is a Cursor-only belt-and-braces.
-- Use [browse-web](../skills/browse-web/SKILL.md) and the installed `agent-browser` CLI for website browsing and live frontend checks. Native desktop surfaces need a separate driver. `/create-verification-skill` packages project-specific launch, fixtures, and scenarios around that browser workflow; automated test suites keep their own runners.
+- Use [browse-web](../skills/browse-web/SKILL.md) to select the active harness's driver for website browsing and live frontend checks. Codex prefers Computer Use when available; other harnesses use the installed `agent-browser` CLI. Native desktop surfaces require Computer Use or another native driver. `/create-verification-skill` packages project-specific launch, fixtures, and scenarios around that browser workflow; automated test suites keep their own runners.
 
 ## MCP servers
 

@@ -1,13 +1,24 @@
 ---
 name: browse-web
-description: "Use the agent-browser CLI to browse websites, read rendered pages, interact with forms, capture screenshots, and verify frontend behavior in a live browser. Applies to local and remote websites; existing automated test suites keep their runners."
+description: "Browse websites, interact with forms, capture screenshots, and verify frontend behavior using the active harness's browser driver. Applies to local and remote websites; existing automated test suites keep their runners."
 ---
 
 # Browse and verify websites
 
-Use Vercel's `agent-browser` CLI for website browsing, rendered-page inspection, interaction, screenshots, and live frontend verification across pstack's harnesses. Read project-local verification instructions for launch, fixtures, and acceptance scenarios, and use this skill as the browser driver. Explicit user tool choices and host requirements take precedence. Search tools may discover URLs; APIs and CLIs may handle non-browser operations. Keep existing Vitest Browser Mode, Playwright, and Cypress regression suites.
+Select the browser driver below for website browsing, rendered-page inspection, interaction, screenshots, and live frontend verification. Read project-local verification instructions for launch, fixtures, and acceptance scenarios, and use this skill as the browser driver. Explicit user tool choices and host requirements take precedence. Search tools may discover URLs; APIs and CLIs may handle non-browser operations. Keep existing Vitest Browser Mode, Playwright, and Cypress regression suites.
 
-## Start a session
+## Select the driver
+
+Identify the active harness using [the harness instructions](../../harness/README.md).
+
+- **Codex:** prefer the available `computer-use:computer-use` skill. Read its installed `SKILL.md` and check that its required runtime is exposed in this session before interacting. A skill file on disk alone does not establish runtime availability. Follow that skill for UI actions, current app state, screenshots, and confirmations; do not copy its implementation or installation path into project recipes.
+- **Other harnesses, or Codex without Computer Use:** use the `agent-browser` workflow below. On Codex, state which Computer Use capability is unavailable before falling back. If the user explicitly requires Computer Use, report the blocker instead of substituting another driver. Do not use fallback to bypass a permission denial.
+
+For Computer Use, start the app with the repository's documented command, identify the intended browser/app and URL, exercise the user journey, and inspect the resulting state and screenshots. Record expected and observed results and retain evidence. Reproduce defects before editing and repeat the same path afterward. Check persistence, responsive layout, and keyboard/focus behavior when relevant. A shared desktop is not an isolated browser session: serialize UI interaction and avoid unrelated tabs, windows, and user data. Clean up only resources created for this run, following the Computer Use skill's confirmation rules. Electron and native desktop UI can use this driver without requiring CDP.
+
+The remaining CLI commands apply only when `agent-browser` is selected.
+
+## Start an agent-browser session
 
 Check `command -v agent-browser` and `agent-browser --version`. Read `agent-browser <command> --help` for unfamiliar flags; use `agent-browser doctor` for launch or dependency failures. The CLI is an external prerequisite, not bundled with pstack. If unavailable, report the concrete blocker; do not silently switch browser drivers or claim verification passed.
 
