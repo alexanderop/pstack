@@ -60,7 +60,7 @@ export async function createCodexTrial(options: {
     }
     async function verifyVersion() {
       const version = await command(executable, ['--version'])
-      if (version.stdout.trim() !== 'codex-cli 0.153.4') throw new Error(`Unsupported Codex protocol version: ${version.stdout.trim()}; validate the adapter before changing the pin. For HOME-dependent shims, set PSTACK_CODEX_BIN to the direct executable`)
+      if (version.stdout.trim() !== 'codex-cli 0.155.0-alpha.9.2') throw new Error(`Unsupported Codex protocol version: ${version.stdout.trim()}; validate the adapter before changing the pin. For HOME-dependent shims, set PSTACK_CODEX_BIN to the direct executable`)
     }
     async function install() {
       if (options.plugin === 'none') throw new Error('Plugin installation is disabled for plain Codex')

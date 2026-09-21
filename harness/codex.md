@@ -3,12 +3,15 @@
 ## Browser and desktop verification
 
 Use pstack [browse-web](../skills/browse-web/SKILL.md) to select the driver.
-Prefer the installed `computer-use:computer-use` skill when its required
-runtime is available in the current session. Read and follow that skill;
-pstack does not bundle its runtime. CLI and desktop sessions may expose
-different tools, so check availability rather than inferring it from Codex
-or an installed skill file. If unavailable, report the missing capability
-and use `agent-browser` for web surfaces unless the user requires Computer Use.
+Treat a callable Computer Use runtime in the current session as authoritative.
+When its `computer-use:computer-use` skill is also available, read and follow
+that skill. When only the runtime is exposed, initialize it and follow the
+documentation it returns; do not call Computer Use uninstalled because the
+skill is absent. pstack does not bundle the runtime. CLI and desktop sessions
+may expose different tools, so keep plugin installation, skill availability,
+and runtime availability distinct. If the runtime is absent or fails to
+initialize, report that concrete failure and use `agent-browser` for web
+surfaces unless the user requires Computer Use.
 Keep automated test suites on their existing runners.
 
 ## Subagent spawn
